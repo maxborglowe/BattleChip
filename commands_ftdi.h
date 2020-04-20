@@ -37,11 +37,14 @@ void spi_transmit(uint8_t data){
 
 /** Master receive data from slave via SPI */
 uint8_t spi_receive(uint8_t dummy){
+	uint8_t readData = 0;
+	
 	SPDR = dummy;
 	/* Wait for reception to complete */
 	while(!(SPSR & (1<<SPIF)));
 	/* Return SPI data register */
-	return SPDR;
+	readData = SPDR;
+	return readData;
 }
 
 //####################################################################
@@ -147,9 +150,13 @@ void host_command(uint8_t command, uint8_t parameter){
 }
 
 /** Initialization sequence from Power Down using PDN-pin */
-void ftdiInit_fromPowerDown(){
+void ftdiInit(){
 	powerOff();
 	_delay_ms(6);	/* Minimum delay for power down is 5ms */
 	powerOn();
 	_delay_ms(25);	/* Minimum delay for power up is 20ms (FT81X_Programmer_Guide, p.12) */
+	host_command(CLKEXT, 0x00);
+	host_command(CLKSEL, CLK_SPD_DEFAULT);
+	host_command(ACTIVE, 0x00);
+	_delay_ms(500); /* Min. delay 300ms according to pg. 8: brtchip.com/wp-content/uploads/Support/Documentation/Application_Notes/ICs/EVE/BRT_AN_014_FT81X_Simple_PIC_Library_Examples.pdf */
 }

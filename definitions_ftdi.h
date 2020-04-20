@@ -48,8 +48,11 @@
 
 /* Commands used by host_command */
 #define ACTIVE 0x00
+#define CLKEXT 0x44
 #define CLKINT 0x48
 #define CLKSEL 0x61
+//CLK speeds
+#define CLK_SPD_DEFAULT 0x00
 
 /* Parameters to commands */
 

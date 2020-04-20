@@ -9,12 +9,12 @@
 #define FCPU 1000000UL
 #include <avr/io.h>
 #include <stdio.h>
-#include <commands_ftdi.h>
+#include <definitions_ftdi.h>
 
 int main(void)
 {
 	spi_masterInit();
-	lcd_init();
+	ftdiInit();
 	
 	wr16(REG_HCYCLE, 548);
 	wr16(REG_HOFFSET, 43);
