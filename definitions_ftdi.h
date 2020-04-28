@@ -19,7 +19,15 @@
 	#define ITR PB3
 	#define PDN PB2
 	#define SS_LCD PB1
-
+	
+#define DDR_BUTTONS DDRA
+#define PIN_BUTTONS PINA
+	#define BTN_UP PA0
+	#define BTN_DN PA1
+	#define BTN_L PA2
+	#define BTN_R PA3
+	#define BTN_SEL PA4
+	
 #define MEM_RD 0x00
 #define MEM_WR 0x80
 
@@ -30,6 +38,9 @@
 #define RAM_DL 0x300000UL			/**Display List RAM, starts at (RAM_DL + 0), increment by 4 in each following wr32 in a single command */
 #define RAM_REG 0x302000UL			/**Registers */
 #define RAM_CMD 0x308000UL			/**Command buffer (non-display list commands)*/
+
+#define REG_ID 0x302000UL			/** ID register, always reads as 0x7C */
+#define REG_CPURESET 0x302020UL		/** Reset control */
 
 #define REG_HCYCLE 0x30202cUL		/**Horizontal total cycle count */
 #define REG_HOFFSET 0x30202cUL		/**Horizontal display start offset */
@@ -107,9 +118,9 @@
    The scissor test and buffer write masks affects operation of CLEAR. Scissor limits cleared rect,
    and buffer write masks limit affected buffers. State of ALPHA_FUNC
    c: HIGH = clear color buffer, s: HIGH = clear stencil buffer, t: HIGH = clear tag buffer */
-#define CLEAR(c,s,t) ((0x26UL<<24)|(((c)&1UL)<<2)|(((s)&1UL)<<1)|(((t)&1UL)<<0))
+#define CLEAR(c, s, t) ((0x26UL<<24)|(((c)&1UL)<<2)|(((s)&1UL)<<1)|(((t)&1UL)<<0))
 #define CLEAR_COLOR_A(alpha) ((0x0F<<24)|(alpha<<8)) /** Specify clear value for alpha channel, initial value is 0 */
-#define CLEAR_COLOR_RGB(red,green,blue) ((2UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL)<<0)) /* Sets color values used by a following CLEAR */
+#define CLEAR_COLOR_RGB(red, green, blue) ((2UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL)<<0)) /* Sets color values used by a following CLEAR */
 #define CLEAR_STENCIL(s) ((0x11UL<<24)|((s)&255UL)) /** Clear value for stencil buffer. s: value to clear stencil buffer. Init: 0 */
 #define CLEAR_TAG(t) ((0x12UL<<24)|((t)&255UL)) /** Clear value for tag buffer. s: value to clear tag buffer. Init: 0 */
 /** Set alpha value to drawn element (points, lines, bitmaps). How alpha value affects pixels depends on BLEND_FUNC.
@@ -129,6 +140,12 @@
 /** Start operation of drawing primitive.
 	x & y: range is 0 - 511 pixels. Init: 1/16 pixel precision*/
 #define VERTEX2II(x, y, handle, cell) ((0x2UL<<30)|(((x)&511UL)<<21)|(((y)&511UL)<<12)|(((handle)&31UL)<<7)|(((cell)&127UL)<<0))
+
+//#######################################
+// Commands used by coprocessor
+//#######################################
+
+#define CMD_SWAP 0xffffff01UL
 
 //#######################################
 // Commands used by host_command
