@@ -68,14 +68,9 @@ void ftdiInit(void){
 	wr8_mem(REG_PCLK, 5); //after this display is visible on the LCD
 }
 
-void coproc_waitUntilEmpty(void){
-	uint8_t complete = eve_waitFifoEmpty();
-	cmd_offset = eve_getWritePtr();
-}
-
 /** write 32 bit command to co-processor engine FIFO, RAM_CMD */
 void coproc_list_begin(void){
-	coproc_waitUntilEmpty();
+	cmd_offset = eve_waitFifoEmpty();
 	
 	ss_lcd_on();
 	adressWrite(RAM_CMD + cmd_offset);
@@ -83,7 +78,8 @@ void coproc_list_begin(void){
 
 void coproc_list_end(void){
 	ss_lcd_off();
-	wr32_mem(REG_CMD_WRITE, cmd_offset);
+	wr32_mem(REG_CMD_WRITE, (cmd_offset));
+	cmd_offset = eve_waitFifoEmpty();s
 }
 
 void coproc_begin_primitive(uint8_t primitive){
