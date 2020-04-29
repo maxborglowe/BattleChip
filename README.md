@@ -6,4 +6,6 @@ This project uses an NHD 4.3" FT812-chip (ctxl) sLCD to display the BattleShip a
 
 - commands_ftdi.h: Contains SPI functions and commands needed to interface with the LCD.
 - definitions_ftdi.h: Contains definitions for ports, ddr, FT812 adresses, etc.
-- main.c: Main application
+- commands_app.h: Functions used to execute EVE graphics commands, such as drawLine, moveObject, etc.
+- game_engine.h: Zis is where we build ze game. 
+- main.c: Main application.
