@@ -33,9 +33,11 @@ void ftdiInit(void){
 	host_command(ACTIVE, 0x00);
 	_delay_ms(500); /* Min. delay 300ms according to pg. 8: brtchip.com/wp-content/uploads/Support/Documentation/Application_Notes/ICs/EVE/BRT_AN_014_FT81X_Simple_PIC_Library_Examples.pdf */
 	
+	//Reads the chip ID and continues ID is correct
 	while(rd8_mem(REG_ID) != 0x7C){
 	}
 	
+	//waits for reset
 	while(rd8_mem(REG_CPURESET) != 0x00){
 	}
 	
@@ -79,7 +81,7 @@ void coproc_list_begin(void){
 void coproc_list_end(void){
 	ss_lcd_off();
 	wr32_mem(REG_CMD_WRITE, (cmd_offset));
-	cmd_offset = eve_waitFifoEmpty();s
+	cmd_offset = eve_waitFifoEmpty();
 }
 
 void coproc_begin_primitive(uint8_t primitive){
