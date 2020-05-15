@@ -10,15 +10,6 @@
 //				MCU SECTION
 //####################################################################
 
-/** Sets the SS_LCD-pin ACTIVE low, place at the start of read/write commands */
-void ss_lcd_on(){
-	PORTB &= ~(1<<SS_LCD);
-}
-
-/** Sets the SS_LCD-pin INACTIVE high, place at the end of read/write commands */
-void ss_lcd_off(){
-	PORTB |= (1<<SS_LCD);
-}
 
 /** Initialize MCU as master */
 void spi_masterInit(){
@@ -26,6 +17,21 @@ void spi_masterInit(){
 	DDR_SPI = (1<<MOSI) | (1<<SCK) | (1<<SS_LCD);
 	/* Enable SPI, Master, set clock division /16 */
 	SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR0);
+}
+
+/** Sets the SS_LCD pin ACTIVE low, place at the start of read/write commands */
+void ss_lcd_on(){
+	PORTB &= ~(1<<SS_LCD);
+	//Nop() is placed to compensate for the SPI access time Tsac, as shown in fig 6.4.2 (SPI interface timing) in DS_FT81x.pdf
+	nop();
+}
+
+/** Sets the SS_LCD pin INACTIVE high, place at the end of read/write commands */
+void ss_lcd_off(){
+	
+	//Nop() is placed to compensate for the SS hold time Tcsnh, as shown in fig 6.4.2 (SPI interface timing) in DS_FT81x.pdf
+	nop();
+	PORTB |= (1<<SS_LCD);
 }
 
 /** Master transmit data to slave via SPI */
