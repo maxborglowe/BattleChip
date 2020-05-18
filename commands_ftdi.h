@@ -72,26 +72,28 @@ void powerOff(){
 
 /** Writes data to specified adress in the FTDI RAM */
 void adressWrite(uint32_t adress){
-	spi_transmit((uint8_t)(adress>>16) | MEM_WR);		/* Send high byte + write command */
-	spi_transmit((uint8_t)(adress>>8));	
-	spi_transmit((uint8_t)(adress));					/* Send low byte */
+	uint8_t dummyRd = 0;
+	dummyRd = spi_transmit((uint8_t)(adress>>16) | MEM_WR);		/* Send high byte + write command */
+	dummyRd = spi_transmit((uint8_t)(adress>>8));	
+	dummyRd = spi_transmit((uint8_t)(adress));					/* Send low byte */
 }
 
 /** Reads data from specified adress in the FTDI RAM */
 void adressRead(uint32_t adress){
-	spi_transmit((uint8_t)(adress>>16) | MEM_RD);		/* Send high byte + read command */
-	spi_transmit((uint8_t)(adress>>8));
-	spi_transmit((uint8_t)(adress));					/* Send low byte */
-	spi_transmit(0x00);									/* Send dummy byte */
+	uint8_t dummyRd = 0;
+	dummyRd = spi_transmit((uint8_t)(adress>>16) | MEM_RD);		/* Send high byte + read command */
+	dummyRd = spi_transmit((uint8_t)(adress>>8));
+	dummyRd = spi_transmit((uint8_t)(adress));					/* Send low byte */
+	dummyRd = spi_transmit(0x00);									/* Send dummy byte */
 }
 
 /** read 1 byte of data from a specified adress in the FTDI memory*/
 uint8_t rd8_mem(uint32_t adress){
-	uint8_t data8 = 0;
+	uint8_t data8 = 0x00;
 	
 	ss_lcd_on();
 	adressRead(adress);
-	data8 = (uint8_t)(spi_receive(0x00));		/* Receive data while sending dummy byte */
+	data8 = rd8_eve();	/* Receive data while sending dummy byte */
 	ss_lcd_off();
 	
 	return data8;
@@ -99,12 +101,11 @@ uint8_t rd8_mem(uint32_t adress){
 
 /** read 2 bytes of data from a specified adress in the FTDI memory*/
 uint16_t rd16_mem(uint32_t adress){
-	uint16_t data16 = 0;
+	uint16_t data16 = 0x0000;
 	
 	ss_lcd_on();
 	adressRead(adress);
-	data16  = (uint8_t)(spi_receive(0x00));		/* Receive low byte while sending dummy byte */
-	data16 |= (uint8_t)(spi_receive(0x00)<<8);	/* Receive high byte */
+	data16 = rd16_eve();
 	ss_lcd_off();
 	
 	return data16;
@@ -112,14 +113,11 @@ uint16_t rd16_mem(uint32_t adress){
 
 /** read 4 bytes of data from a specified adress in the FTDI memory*/
 uint32_t rd32_mem(uint32_t adress){
-	uint32_t data32 = 0;
+	uint32_t data32 = 0x00000000;
 	
 	ss_lcd_on();
 	adressRead(adress);
-	data32  = (uint8_t)(spi_receive(0x00));		/* Receive low byte while sending dummy byte */
-	data32 |= (uint8_t)(spi_receive(0x00)<<8);
-	data32 |= (uint8_t)(spi_receive(0x00)<<16);
-	data32 |= (uint8_t)(spi_receive(0x00)<<24);	/* Receive high byte */
+	data32 = rd32_eve();
 	ss_lcd_off();
 	
 	return data32;
@@ -129,7 +127,7 @@ uint32_t rd32_mem(uint32_t adress){
 uint8_t wr8_mem(uint32_t adress, uint8_t data8){
 	ss_lcd_on();
 	adressWrite(adress);
-	spi_transmit(data8);					/* Send data */
+	wr8_eve(data8);
 	ss_lcd_off();
 }
 
@@ -137,8 +135,7 @@ uint8_t wr8_mem(uint32_t adress, uint8_t data8){
 uint16_t wr16_mem(uint32_t adress, uint16_t data16){
 	ss_lcd_on();
 	adressWrite(adress);
-	spi_transmit((uint8_t)(data16));		/* Send low byte */
-	spi_transmit((uint8_t)(data16>>8));		/* Send high byte */
+	wr16_eve(data16);
 	ss_lcd_off();
 }
 
@@ -146,19 +143,18 @@ uint16_t wr16_mem(uint32_t adress, uint16_t data16){
 uint16_t wr32_mem(uint32_t adress, uint32_t data32){
 	ss_lcd_on();
 	adressWrite(adress);
-	spi_transmit((uint8_t)(data32));		/* Send low byte */
-	spi_transmit((uint8_t)(data32>>8));
-	spi_transmit((uint8_t)(data32>>16));
-	spi_transmit((uint8_t)(data32>>24));	/* Send high byte */
+	wr32_eve(data32);
 	ss_lcd_off();
 }
 
 //####################################################################
 //				EVE TRANSPORT SECTION
 //####################################################################
+//The following functions can be used in burst operations
+//####################################################################
 
 /** read 1 bytes of data from EVE */
-uint8_t rd8_eve(uint32_t adress){
+uint8_t rd8_eve(void){
 	uint8_t data8 = 0x00;
 
 	data8 = (uint8_t)(spi_receive(0x00));		/* Receive data while sending dummy byte */
@@ -167,7 +163,7 @@ uint8_t rd8_eve(uint32_t adress){
 }
 
 /** read 2 bytes of data from EVE */
-uint16_t rd16_eve(uint32_t adress){
+uint16_t rd16_eve(void){
 	uint16_t data16 = 0x0000;
 	
 	data16  = (uint8_t)(spi_receive(0x00));		/* Receive low byte while sending dummy byte */
@@ -177,7 +173,7 @@ uint16_t rd16_eve(uint32_t adress){
 }
 
 /** read 4 bytes of data from EVE */
-uint32_t rd32_eve(uint32_t adress){
+uint32_t rd32_eve(void){
 	uint32_t data32 = 0x00000000;
 
 	data32  = (uint8_t)(spi_receive(0x00));		/* Receive low byte while sending dummy byte */
@@ -190,54 +186,56 @@ uint32_t rd32_eve(uint32_t adress){
 
 /** Writes 1 byte of data to EVE (used in copro_command) */
 uint8_t wr8_eve(uint8_t data8){
-
-	spi_transmit(data8);					/* Send data */
+	uint8_t dummyRd = 0x00;
+	dummyRd = spi_transmit(data8);					/* Send data */
 
 }
 
 /** Writes 2 byte of data to EVE (used in copro_command) */
 uint16_t wr16_eve(uint16_t data16){
-
-	spi_transmit((uint8_t)(data16));		/* Send low byte */
-	spi_transmit((uint8_t)(data16>>8));		/* Send high byte */
+	uint8_t dummyRd = 0x00;
+	dummyRd = spi_transmit((uint8_t)(data16));		/* Send low byte */
+	dummyRd = spi_transmit((uint8_t)(data16>>8));		/* Send high byte */
 
 }
 
 /** Writes 4 byte of data to EVE (used in copro_command) */
 uint16_t wr32_eve(uint32_t data32){
+	uint8_t dummyRd = 0x00;
+	dummyRd = spi_transmit((uint8_t)(data32));		/* Send low byte */
+	dummyRd = spi_transmit((uint8_t)(data32>>8));
+	dummyRd = spi_transmit((uint8_t)(data32>>16));
+	dummyRd = spi_transmit((uint8_t)(data32>>24));	/* Send high byte */
 
-	spi_transmit((uint8_t)(data32));		/* Send low byte */
-	spi_transmit((uint8_t)(data32>>8));
-	spi_transmit((uint8_t)(data32>>16));
-	spi_transmit((uint8_t)(data32>>24));	/* Send high byte */
+}
 
+/** Writes host command + parameter to the FTDI. Used for basic functions such as "wake from powerdown", etc. */
+void host_command(uint8_t command, uint8_t parameter){
+	uint8_t dummyRd = 0;
+	ss_lcd_on();
+	dummyRd = spi_transmit(command);
+	dummyRd = spi_transmit(parameter);
+	dummyRd = spi_transmit(0x00);
+	ss_lcd_off();
 }
 
 //####################################################################
 //				FTDI COMMAND SECTION
 //####################################################################
 
-void host_command(uint8_t command, uint8_t parameter){
-	ss_lcd_on();
-	spi_transmit(command);
-	spi_transmit(parameter);
-	spi_transmit(0x00);
-	ss_lcd_off();
-}
-
 uint8_t eve_waitFifoEmpty(void){
 	uint16_t rd_ptr, wr_ptr;
 	
 	do{
-		rd_ptr = rd16_mem(REG_CMD_READ);
-		wr_ptr = rd16_mem(REG_CMD_WRITE);
-	}while((rd_ptr != wr_ptr) && (rd_ptr != 0xFFF));
+		rd_ptr = rd16_mem(REG_CMD_READ); //Read Read pointer value in fifo
+		wr_ptr = rd16_mem(REG_CMD_WRITE); //Read Write pointer value in fifo
+	}while((rd_ptr != wr_ptr) && (rd_ptr != 0xFFF)); //Wait for pointers to reach matching values
 	
-	if (rd_ptr == 0xFFF)
+	if (rd_ptr == 0xFFF) //error detection
 	{
 		return 0xFF;
 	}
-	else{
+	else{			//successful matching pointer values
 		return 0;
 	}
 }
