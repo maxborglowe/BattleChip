@@ -7,9 +7,18 @@
 
 #include "definitions_ftdi"
 #include "commands_ftdi.h"
+#include <stdbool.h>
 
 #ifndef GAME_ENGINE_H_
 #define GAME_ENGINE_H_
+
+#define DDR_BUTTONS DDRA
+#define PIN_BUTTONS PINA
+#define BTN_UP PA0
+#define BTN_DN PA1
+#define BTN_L PA2
+#define BTN_R PA3
+#define BTN_SEL PA4
 
 
 uint8_t DN = 1, UP = 2, L = 4, R = 8, SEL = 16;
@@ -18,6 +27,19 @@ uint8_t DN = 1, UP = 2, L = 4, R = 8, SEL = 16;
 #define Cols 10
 
 #define NumShips  5
+
+public int playerOneBoard[][];
+public int playerOneShootBoard[][];
+
+public int playerTwoBoard[][];
+public int playerTwoShootBoard[][]
+
+	int winner = 0;
+	int colSel = 0;
+	int rowSel = 0;
+	int playerOneHit = 0;
+	int playerTwoHit = 0;
+	bool noWinner = true;
 
 /* Init. knappar */
 void buttonInit()
@@ -242,6 +264,9 @@ while (noWinner) {
 	/*Om spelare 1 skjuter på en plats och den platsen är markerad med ett skepp på spealer 2 så ska det vara en träff*/
 	playerOneShootBoard[rows][cols] = 1;
 	if (playerOneShotBoard[rows][cols] == 1 && playerTwoBoard[rows][cols] == 1) {
+		/*2:a betyder träffat skepp, ska synas för träffad spelare och skjutande spelare*/
+		playerOneShotBoard[rows][cols] = 2;
+		playerTwoBoard[][]
 		playerOneHits++;
 	}
 
