@@ -24,7 +24,7 @@ void inc_cmd_offset(uint8_t increment){
 
 void inc_dl_offset(uint8_t increment){
 	dl_offset += increment;
-	dl_offset &= 0xFFFF; //decimal 4095
+	dl_offset &= 0xFFFF; //decimal 8191
 }
 
 /** Initialization sequence from Power Down mode using PDN-pin */
