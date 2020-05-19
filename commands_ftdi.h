@@ -219,31 +219,4 @@ void host_command(uint8_t command, uint8_t parameter){
 	ss_lcd_off();
 }
 
-//####################################################################
-//				FTDI COMMAND SECTION
-//####################################################################
-
-uint8_t eve_waitFifoEmpty(void){
-	uint16_t rd_ptr, wr_ptr;
-	
-	do{
-		rd_ptr = rd16_mem(REG_CMD_READ); //Read Read pointer value in fifo
-		wr_ptr = rd16_mem(REG_CMD_WRITE); //Read Write pointer value in fifo
-	}while((rd_ptr != wr_ptr) && (rd_ptr != 0xFFF)); //Wait for pointers to reach matching values
-	
-	if (rd_ptr == 0xFFF) //error detection
-	{
-		return 0xFF;
-	}
-	else{			//successful matching pointer values
-		return 0;
-	}
-}
-
-/** Return the current position of the EVE write pointer */
-uint32_t eve_getWritePtr(){
-	uint32_t wr_ptr = rd32_mem(REG_CMD_WRITE);
-	return wr_ptr;
-}
-
 #endif
