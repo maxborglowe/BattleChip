@@ -14,10 +14,13 @@ uint8_t boardOrigoY = 11; /* These starting coordinates will make sure the board
 							of each box that make up the playing field are 25 units wide. */
 uint8_t boxWidth = 25;
 uint8_t lineWidth = 1;
+uint8_t pointWidth = 10;
 
-void drawBoard(){
+void drawBoard(uint8_t selectBoard){
+	toggle = false;
+	coproc_clear_color_rgb(0, 0, 0);
 	drawBoardBoundaries(boardOrigoX, boardOrigoY, boxWidth);
-	
+	drawCursor();
 }
 
 void drawBoardBoundaries(uint8_t startX, uint8_t startY, uint8_t boxWidth){
@@ -43,27 +46,57 @@ void drawBoardBoundaries(uint8_t startX, uint8_t startY, uint8_t boxWidth){
 }
 
 /** */
-void drawFriendly(void){
-		for (int i = 0; i < Rows; i++)
+void drawFriendlyBoard(void){
+	for (int i = 0; i < Rows; i++)
+	{
+		for (int k = 0; k < Cols; k++)
 		{
-			if (playerOneBoard)
+			if (playerOneBoard[i][k] == 1)
 			{
-				
+				coproc_color_rgb(255, 255, 255);
+				coproc_point_size(pointWidth);
+				coproc_vertex2F(boardOrigoX + i * boxWidth - boxWidth/2, boardOrigoY + k * boxWidth - boxWidth/2);
+				coproc_end();
+				coproc_display();
 			}
 		}
 	}
+}
 
-void drawCursor(uint8_t rowSel, uint8_t colSel){
-	coproc_color_rgb(255, 0, 255);
+void drawShootBoard(void){
+	for (int i = 0; i < Rows; i++)
+	{
+		for (int k = 0; k < Cols; k++)
+		{
+			//draw white dot if shoot and miss
+			if (playerOneBoard[i][k] == 1)
+			{
+				coproc_color_rgb(255, 255, 255);
+				coproc_point_size(pointWidth);
+				coproc_vertex2F(boardOrigoX + i * boxWidth - boxWidth/2, boardOrigoY + k * boxWidth - boxWidth/2);
+				coproc_end();
+				coproc_display();
+			}
+			//draw red dot if shoot and hit
+			else if (playerOneBoard[i][k] == 2)
+			{
+				coproc_color_rgb(0, 255, 0);
+				coproc_point_size(pointWidth);
+				coproc_vertex2F(boardOrigoX + i * boxWidth - boxWidth/2, boardOrigoY + k * boxWidth - boxWidth/2);
+				coproc_end();
+				coproc_display();
+			}
+		}
+	}
+}
+
+void drawCursor(){
+	coproc_color_rgb(255, 255, 0);
 	coproc_point_size(pointWidth);
 	coproc_vertex2F(boardOrigoX + rowSel * boxWidth - boxWidth/2, boardOrigoY + colSel * boxWidth - boxWidth/2);
 	//stop drawing primitives
 	coproc_end();
 	coproc_display();
-}
-
-void drawShip(){
-	
 }
 
 #endif /* GRAPHICS_H_ */
