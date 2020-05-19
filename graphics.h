@@ -53,6 +53,15 @@ void drawFriendly(void){
 		}
 	}
 
+void drawCursor(uint8_t rowSel, uint8_t colSel){
+	coproc_color_rgb(255, 0, 255);
+	coproc_point_size(pointWidth);
+	coproc_vertex2F(boardOrigoX + rowSel * boxWidth - boxWidth/2, boardOrigoY + colSel * boxWidth - boxWidth/2);
+	//stop drawing primitives
+	coproc_end();
+	coproc_display();
+}
+
 void drawShip(){
 	
 }
