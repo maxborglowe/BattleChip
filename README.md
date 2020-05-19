@@ -9,3 +9,4 @@ This project uses an NHD 4.3" FT812-chip (ctxl) sLCD to display the BattleShip a
 - commands_app.h: Functions used to execute EVE graphics commands, such as drawLine, moveObject, etc.
 - game_engine.h: Zis is where we build ze game. 
 - main.c: Main application.
+- graphics. h: Controls the drawing of game objects onto the LCD using commands from previously listed files.
