@@ -8,6 +8,9 @@
 #ifndef DEFINITIONS_FTDI_H_
 #define DEFINITIONS_FTDI_H_
 
+#define MEM_RD 0x00
+#define MEM_WR 0x80
+
 //#######################################
 // Data direction and port definition
 //#######################################
@@ -27,9 +30,6 @@
 	#define BTN_L PA2
 	#define BTN_R PA3
 	#define BTN_SEL PA4
-	
-#define MEM_RD 0x00
-#define MEM_WR 0x80
 
 //#######################################
 // Adress list
