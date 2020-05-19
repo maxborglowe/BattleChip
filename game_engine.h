@@ -34,8 +34,8 @@ public int playerTwoBoard[][];
 public int playerTwoShootBoard[][]
 
 	int winner = 0;
-	int colSel = 0;
-	int rowSel = 0;
+public int colSel = 0;
+public int rowSel = 0;
 	int playerOneHit = 0;
 	int playerTwoHit = 0;
 	bool noWinner = true;
