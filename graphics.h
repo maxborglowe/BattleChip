@@ -97,14 +97,6 @@ void drawShootBoard(void){
 	}
 }
 
-/** draw ship location during ship placement */
-void drawShip(uint8_t shipType){
-	if (shipType == 0)
-	{
-		
-	}
-}
-
 /** Draws a yellow cursor dot on the board, and if in setup mode - the ships to be placed are shown and updated aswell */
 void drawCursor(){
 	
