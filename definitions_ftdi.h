@@ -8,9 +8,6 @@
 #ifndef DEFINITIONS_FTDI_H_
 #define DEFINITIONS_FTDI_H_
 
-#define MEM_RD 0x00
-#define MEM_WR 0x80
-
 //#######################################
 // Data direction and port definition
 //#######################################
@@ -30,6 +27,9 @@
 	#define BTN_L PA2
 	#define BTN_R PA3
 	#define BTN_SEL PA4
+	
+#define MEM_RD 0x00
+#define MEM_WR 0x80
 
 //#######################################
 // Adress list
@@ -70,10 +70,9 @@
 #define REG_CMD_WRITE 0x3020fcUL	/** Command buffer write pointer */
 #define REG_CMD_DL 0x302100UL		/** Command display list offset */
 
-#define CMD_DLSTART 0xFFFFFF00UL 
 
 //#######################################
-// Display List commands (chapt. 4)
+// Display List commands
 //#######################################
 
 /** Specify the alpha test function
@@ -145,7 +144,9 @@
 // Commands used by coprocessor
 //#######################################
 
-#define CMD_SWAP 0xffffff01UL
+#define CMD_SWAP 0xffffff01UL 		/** Co-processor requests DL swap after the current display list has been scanned out */
+
+#define CMD_DLSTART 0xFFFFFF00UL 	/** Tells co-processor to start writing the display list at RAM_DL+0*/
 
 //#######################################
 // Commands used by host_command
