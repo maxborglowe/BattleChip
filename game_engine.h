@@ -7,6 +7,7 @@
 
 #include "definitions_ftdi"
 #include "commands_ftdi.h"
+#include "graphics.h"
 #include <stdbool.h>
 
 #ifndef GAME_ENGINE_H_
@@ -34,8 +35,8 @@ public int playerTwoBoard[][];
 public int playerTwoShootBoard[][]
 
 	int winner = 0;
-	int colSel = 0;
-	int rowSel = 0;
+public int colSel = 0;
+public int rowSel = 0;
 	int playerOneHit = 0;
 	int playerTwoHit = 0;
 	bool noWinner = true;
@@ -43,7 +44,6 @@ public int playerTwoShootBoard[][]
 void buttonInit()
 {
 	DDR_BUTTONS = 0x00; /* Set DDR of I/O bus A to INPUT */
-	
 }
 
 
@@ -93,17 +93,22 @@ void waitForSelect(void){
 	{
 		if(buttonPoll == L) {
 			colSel = (colSel - 1)%Cols;
+			drawBoard();
 		}
 		else if(buttonPoll == R) {
 			colSel = (colSel + 1)%Cols;
+			drawBoard();
 		}
 		if (buttonPoll == DN) {
 			rowSel = (rowSel + 1)%Rows;
+			drawCBoard();
 		}
 		else if(buttonPoll == UP) {
 			rowSel = (rowSel - 1)%Rows;
+			drawBoard();
 		}
 	}
+	drawBoard();
 }
 
 void placeShips{
