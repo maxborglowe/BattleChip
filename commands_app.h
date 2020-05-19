@@ -12,14 +12,19 @@
 #define COMMANDS_APP_H_
 
 /** pointer for the 4k coprocessor FIFO. Starts at 0, since no commands have yet been written to the FIFO*/
-uint16_t cmd_offset = 0x0000;
+uint16_t cmd_offset = RAM_CMD;
 uint32_t dl_offset = RAM_DL;
 
-/** Increment the RAM_DL pointer by increment. Since FIFO entries are 4 bytes wide, the offset is incremented by 4 for each entry.
+/** Increment the RAM_CMD pointer by increment. Since FIFO entries are 4 bytes wide, the offset is incremented by 4 for each entry.
 	The AND operation makes sure that the offset never passes 4095, which is the full range of the FIFO memory */
 void inc_cmd_offset(uint8_t increment){
 	cmd_offset += increment;
-	cmd_offset &= 0x0FFF;
+	cmd_offset &= 0x0FFF; //decimal 4095
+}
+
+void inc_dl_offset(uint8_t increment){
+	dl_offset += increment;
+	dl_offset &= 0xFFFF; //decimal 4095
 }
 
 /** Initialization sequence from Power Down mode using PDN-pin */
@@ -31,15 +36,14 @@ void ftdiInit(void){
 	host_command(CLKEXT, 0x00);
 	host_command(CLKSEL, CLK_SPD_DEFAULT);
 	host_command(ACTIVE, 0x00);
-	_delay_ms(500); /* Min. delay 300ms according to pg. 8: brtchip.com/wp-content/uploads/Support/Documentation/Application_Notes/ICs/EVE/BRT_AN_014_FT81X_Simple_PIC_Library_Examples.pdf */
+	_delay_ms(500); /* Min. delay 300ms to let the processor do some housekeeping, 
+			according to pg. 8: brtchip.com/wp-content/uploads/Support/Documentation/Application_Notes/ICs/EVE/BRT_AN_014_FT81X_Simple_PIC_Library_Examples.pdf */
 	
 	//Reads the chip ID and continues ID is correct
-	while(rd8_mem(REG_ID) != 0x7C){
-	}
+	readChipID();
 	
 	//waits for reset
-	while(rd8_mem(REG_CPURESET) != 0x00){
-	}
+	waitForReset();
 	
 	wr16_mem(REG_HCYCLE, 548);
 	wr16_mem(REG_HOFFSET, 43);
@@ -55,35 +59,39 @@ void ftdiInit(void){
 	wr16_mem(REG_HSIZE, 480);
 	wr16_mem(REG_VSIZE, 272);
 	
-	wr8_mem(REG_PWM_DUTY, 50); /* Turn off backlight */
+	wr8_mem(REG_PWM_DUTY, 100);
+	wr8_mem(REG_PWM_HZ, 1000);
 	
 	/* write first display list */
-	wr32_mem(RAM_DL + 0, CLEAR(1, 1, 1));
-	wr32_mem(RAM_DL + 4, CLEAR_COLOR_RGB(0, 0, 200));
-	wr32_mem(RAM_DL + 8, DISPLAY());
+	
+	dl_offset = RAM_DL;
+	wr32_mem(dl_offset, CLEAR(1, 1, 1));
+	inc_dl_offset(4);
+	wr32_mem(dl_offset, CLEAR_COLOR_RGB(0, 0, 0));
+	inc_dl_offset(4);
+	wr32_mem(dl_offset, DISPLAY());
 	
 	wr8_mem(REG_DLSWAP, DLSWAP_FRAME); //display list swap
-	
-	wr8_mem(REG_GPIO_DIR, 0x80|rd8_mem(REG_GPIO_DIR));
-	wr8_mem(REG_GPIO, 0x080|rd8_mem(REG_GPIO)); //enable display bit
 	
 	wr8_mem(REG_PCLK, 5); //after this display is visible on the LCD
 }
 
-/** write 32 bit command to co-processor engine FIFO, RAM_CMD */
+/** start writing burst commands to the RAM FIFO */
 void coproc_list_begin(void){
-	cmd_offset = eve_waitFifoEmpty();
-	
+	waitFifoEmpty();
+	cmd_offset = getWritePtr();
 	ss_lcd_on();
-	adressWrite(RAM_CMD + cmd_offset);
+	adressWrite(RAM_CMD + cmdOffset);
 }
 
+/** End of previously started burst command to the RAM FIFO*/
 void coproc_list_end(void){
 	ss_lcd_off();
-	wr32_mem(REG_CMD_WRITE, (cmd_offset));
-	cmd_offset = eve_waitFifoEmpty();
+	wr32_mem(REG_CMD_WRITE, cmd_offset);
+	waitFifoEmpty();
 }
 
+/** Draw graphic primitive. See definitions_ftdi.h for available primitives. */
 void coproc_begin_primitive(uint8_t primitive){
 	wr32_eve(BEGIN(primitive));
 	inc_cmd_offset(4);
@@ -124,11 +132,13 @@ coproc_clear_color_rgb(uint8_t red, uint8_t green, uint8_t blue){
 	inc_cmd_offset(4);
 }
 
+/** Set width of point primitive */
 void coproc_point_size(uint16_t point_size){
 	wr32_eve(POINT_SIZE(point_size));
 	inc_cmd_offset(4);
 }
 
+/** Clear color, stencil, and tag */
 void coproc_clear(uint8_t c, uint8_t s, uint8_t t){
 	wr32_eve(CLEAR(c, s, t));
 	inc_cmd_offset(4);
@@ -140,6 +150,51 @@ void coproc_swap(void){
 	inc_cmd_offset(4);
 }
 
+/** Poll the read/write pointers REG_CMD_READ and REG_CMD_WRITE until they are equal, meaning the RAM FIFO is empty */
+uint8_t waitFifoEmpty(void){
+	uint16_t rd_ptr, wr_ptr;
+	
+	do{
+		rd_ptr = rd16_mem(REG_CMD_READ); //Read Read pointer value in fifo
+		wr_ptr = rd16_mem(REG_CMD_WRITE); //Read Write pointer value in fifo
+	}while((rd_ptr != wr_ptr) && (rd_ptr != 0xFFF)); //Wait for pointers to reach matching values
+	
+	if (rd_ptr == 0xFFF) //error detection
+	{
+		return 0xFF;
+	}
+	else{			//successful matching pointer values
+		return 0;
+	}
+}
+
+/** Return the current position of the EVE write pointer */
+uint32_t getWritePtr(void){
+	uint32_t wr_ptr = rd32_mem(REG_CMD_WRITE);
+	return wr_ptr;
+}
+
+/** Wait for CPU reset */
+void waitForReset(void){
+	while(rd8_mem(REG_CPURESET) != 0x00){
+	}
+}
+
+/** Checks the chip ID. If 0x7C is read, the chip corresponds the Bridgetech FT812 */
+void readChipID(void){
+	while(rd8_mem(REG_ID) != 0x7C){
+	}
+}
+		 
+void checkFreeSpace(uint16_t offset){
+	uint16_t howfull, free;
+	uint32_t rdPtr = 0;
+	
+	rdPtr = rd32_mem(REG_CMD_READ);
+	howfull = ((offset - (uint16_t rdPtr) & 4095);
+	free = (4096 - 4) - howfull;
+		return free;
+}
 
 
 #endif /* COMMANDS_APP_H_ */
