@@ -60,12 +60,15 @@ void buttonPoll(void)
 		case BTN_DN: return DN;
 		
 		case BTN_UP: return UP;
-		
+			
 		case BTN_L: return L;
 		
 		case BTN_R: return R;
 		
 		case BTN_SEL: return SEL;
+			
+		//debouncing delay
+		_delay_ms(100);
 	}
 }
 
@@ -221,8 +224,8 @@ void shootShips(void){
 	if(noWinner == true) {
 		waitForSelect();
 	}
-
-	if (playerTwoBoard[rowSel][colSel] == 1) {
+	
+	if (playerTwoBoard[rowSel][colSel] == 1 && playerOneShootBoard[rowSel][colSel] == 0) {
 		playerOneShootBoard[rowSel][colSel] = 2;
 		playerOneHit++;
 		if (playerOneHit == 17) {
@@ -239,7 +242,7 @@ void shootShips(void){
 		waitForSelect();
 	}
 	
-	if (playerOneBoard[rowSel][colSel] == 1) {
+	if (playerOneBoard[rowSel][colSel] == 1 && playerTwoShootBoard[rowSel][colSel] == 0) {
 		playerTwoShootBoard[rowSel][colSel] = 2;
 		playerTwoHit++;
 		if (playerTwoHit == 17) {
