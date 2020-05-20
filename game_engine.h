@@ -22,7 +22,6 @@
 
 uint8_t DN = 1, UP = 2, L = 4, R = 8, SEL = 16;
 
-/** definar lite grejer som kanske används */
 #define Rows 10
 #define Cols 10
 
@@ -34,25 +33,26 @@ public int playerOneShootBoard[][];
 public int playerTwoBoard[][];
 public int playerTwoShootBoard[][]
 
-	int winner = 0;
-	public int colSel = 0;
-	public int rowSel = 0;
-	int playerOneHit = 0;
-	int playerTwoHit = 0;
+	public uint8_t winner = 0;
+	public uint8_t colSel = 0;
+	public uint8_t rowSel = 0;
+	uint8_t playerOneHit = 0;
+	uint8_t playerTwoHit = 0;
 	public bool toggle;
 	public bool setup;
-	public int shipType = 0;
+	public uint8_t shipType = 0;
 	public int turn = 0;
 	
-	bool noWinner = true;
+	public bool noWinner = true;
 	
+/** Initialize data direction for buttons as input */
 void buttonInit()
 {
 	DDR_BUTTONS = 0x00; /* Set DDR of I/O bus A to INPUT */
 }
 
 
-/** Polls the five pushbuttons */
+/** Polls the five pushbuttons which each generate the defined uint8_t variables DN, UP, L, R, and SEL*/
 void buttonPoll(void)
 {
 	switch (PIN_BUTTONS)
@@ -69,6 +69,7 @@ void buttonPoll(void)
 	}
 }
 
+/** Select game type. Free-for-all not yet implemented */
 void selectGameType(uint8_t game_type){
 	if (game_type == 0)
 	{
@@ -81,7 +82,7 @@ void selectGameType(uint8_t game_type){
 
 
 /** Initialize game boards.
-	player...Board = an overview of each player's own placement of ships on the board. 1 = ship placed, 0 = no ship placed
+	player...Board = an overview of each player's own placement of ships on the board.
 	player...shootBoard = represents each player's hit board = overview of which parts of the board that the player has shot at.  */
 void initTwoPlayerGame(void){
 	playerOneBoard[Rows][Cols];
@@ -91,14 +92,15 @@ void initTwoPlayerGame(void){
 	playerTwoShootBoard[Rows][Cols];
 }
 
-/** Waits for player to press the select button */
+/** Waits for player to press the select button and keeps track of the cursor placement on the current board*/
 void waitForSelect(void){
 	
 	while (buttonPoll != SEL)
 	{
+		//the %10 makes sure the cursor doesn't exceed the board boundaries defined by Rows & Cols
 		if(buttonPoll == L) {
 			colSel = (colSel - 1)%Cols;
-			drawCursor();					//drawCursor() is placed in the if-satsers so as not to draw unless a button is pushed :)
+			drawCursor();			//drawCursor() is placed in the if-statements so as not to draw unless a button is pushed :)
 		}
 		else if(buttonPoll == R) {
 			colSel = (colSel + 1)%Cols;
@@ -120,18 +122,20 @@ void waitForSelect(void){
 	}
 }
 
-/** Let players place ships on their boards, starting with player 1 */
+/** Let players place ships on their respective boards, starting with player 1.
+1 = ship placed, 0 = no ship placed */
 void placeShips{
 	int colSel = 0;
 	int rowSel = 0;
 	setup = true;
 	
-	//player 2
+	//player 1 ship placement
 	for(int i = 0; i < NumShips; i++){
 		
 		waitForSelect();
 		
 		NumShips++;
+		//shipType defines the size of each ship to be placed
 		if (shipType == 0) {
 			playerOneBoard[rowSel][colSel] = 1;
 			playerOneBoard[rowSel][colSel + 1] = 1;
@@ -171,7 +175,7 @@ void placeShips{
 		drawBoard();
 	}
 	
-	//player 2
+	//player 2 ship placement
 	for (int i = 0; i < NumShips; i++) {
 		
 		waitForSelect();
@@ -215,7 +219,9 @@ void placeShips{
 }
 
 /** Game commences as each player is allowed to take turn shooting each others' ships
-	ShootBoard: 0 = no shot attempted; 1 = shot, but missed; 2 = shot, and hit!*/
+	ShootBoard: 0 = no shot attempted; 1 = shot, but missed; 2 = shot, and hit.
+	Each player has a hit counter playerOneHit and playerTwoHit. When one of the hit counters reach 17,
+	i.e. the total amount of ship parts placed */
 void shootShips(void){
 	
 	//Player one's turn
