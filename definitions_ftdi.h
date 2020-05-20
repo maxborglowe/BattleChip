@@ -8,9 +8,6 @@
 #ifndef DEFINITIONS_FTDI_H_
 #define DEFINITIONS_FTDI_H_
 
-#define MEM_RD 0x00
-#define MEM_WR 0x80
-
 //#######################################
 // Data direction and port definition
 //#######################################
@@ -23,13 +20,8 @@
 	#define PDN PB2
 	#define SS_LCD PB1
 	
-#define DDR_BUTTONS DDRA
-#define PIN_BUTTONS PINA
-	#define BTN_UP PA0
-	#define BTN_DN PA1
-	#define BTN_L PA2
-	#define BTN_R PA3
-	#define BTN_SEL PA4
+#define MEM_RD 0x00
+#define MEM_WR 0x80
 
 //#######################################
 // Adress list
@@ -70,9 +62,10 @@
 #define REG_CMD_WRITE 0x3020fcUL	/** Command buffer write pointer */
 #define REG_CMD_DL 0x302100UL		/** Command display list offset */
 
+#define CMD_DLSTART 0xFFFFFF00UL 
 
 //#######################################
-// Display List commands
+// Display List commands (chapt. 4)
 //#######################################
 
 /** Specify the alpha test function
@@ -135,6 +128,7 @@
 #define POINT_SIZE(p_size) ((0x0dUL<<24)|(((p_size)&8191UL)<<0))
 /** Start operation of drawing primitive. Pixel precision & max range of coordinates depends on value of VERTEX_FORMAT.
 	x & y: signed coordinates in units of pixel precision defined in command VERTEX_FORMAT. Init: 1/16 pixel precision*/
+#define VERTEX_FORMAT(frac) ((39UL<<24)|(((frac)&7UL)<<0))
 #define VERTEX2F(x, y) ((1UL<<30)|(((x)&32767UL)<<15)|(((y)&32767UL)<<0))
 /** Start operation of drawing primitive.
 	x & y: range is 0 - 511 pixels. Init: 1/16 pixel precision*/
@@ -144,9 +138,7 @@
 // Commands used by coprocessor
 //#######################################
 
-#define CMD_SWAP 0xffffff01UL 		/** Co-processor requests DL swap after the current display list has been scanned out */
-
-#define CMD_DLSTART 0xFFFFFF00UL 	/** Tells co-processor to start writing the display list at RAM_DL+0*/
+#define CMD_SWAP 0xffffff01UL
 
 //#######################################
 // Commands used by host_command
@@ -164,3 +156,5 @@
 
 
 #endif /* end of include guard */
+
+
