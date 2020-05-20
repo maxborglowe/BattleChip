@@ -16,12 +16,14 @@ uint16_t cmd_offset = RAM_CMD;
 uint32_t dl_offset = RAM_DL;
 
 /** Increment the RAM_CMD pointer by increment. Since FIFO entries are 4 bytes wide, the offset is incremented by 4 for each entry.
-	The AND operation makes sure that the offset never passes 4095, which is the full range of the FIFO memory */
+	The AND operation makes sure that the offset never passes 4095, which is the full range of the FIFO circular buffer */
 void inc_cmd_offset(uint8_t increment){
 	cmd_offset += increment;
 	cmd_offset &= 0x0FFF; //decimal 4095
 }
 
+/** Increment the RAM_DL pointer by increment. Since FIFO entries are 4 bytes wide, the offset is incremented by 4 for each entry.
+	The AND operation makes sure that the offset never passes 8191, which is the full range of the FIFO circular buffer */
 void inc_dl_offset(uint8_t increment){
 	dl_offset += increment;
 	dl_offset &= 0xFFFF; //decimal 8191
@@ -81,7 +83,7 @@ void coproc_list_begin(void){
 	waitFifoEmpty();
 	cmd_offset = getWritePtr();
 	ss_lcd_on();
-	adressWrite(RAM_CMD + cmdOffset);
+	adressWrite(RAM_CMD + cmd_offset);
 }
 
 /** End of previously started burst command to the RAM FIFO*/
@@ -97,12 +99,21 @@ void coproc_begin_primitive(uint8_t primitive){
 	inc_cmd_offset(4);
 }
 
-/** Select color with which primitives will be drawn */
 void coproc_color_rgb(uint8_t red, uint8_t green, uint8_t blue){
 	wr32_eve(COLOR_RGB(red, green, blue));
 	inc_cmd_offset(4);
 }
 
+
+void coproc_vertex_format(uint8_t frac){
+	wr32_eve(VERTEX_FORMAT(frac));
+	inc_cmd_offset(4);
+}
+
+void coproc_vertex2F(uint16_t x, uint16_t y){
+	wr32_eve(VERTEX2F(x, y));
+	inc_cmd_offset(4);
+}
 
 void coproc_vertex2II(uint16_t x, uint16_t y, uint8_t handle, uint8_t cell){
 	wr32_eve(VERTEX2II(x, y, handle, cell));
@@ -114,21 +125,25 @@ void coproc_line_width(uint16_t width){
 	inc_cmd_offset(4);
 }
 
+/** End of display list. NOTE: Programmed graphics isn't drawn on-screen until coproc_swap is executed */
 void coproc_display(void){
 	wr32_eve(DISPLAY());
 	inc_cmd_offset(4);
 }
 
+/** Co-processor starts new display list */
 void coproc_dlstart(void){
 	wr32_eve(CMD_DLSTART);
 	inc_cmd_offset(4);
 }
 
+/** Finish drawing graphics primitive */
 void coproc_end(void){
 	wr32_eve(END());
 	inc_cmd_offset(4);
 }
 
+/** Clear the screen to chosen color */
 coproc_clear_color_rgb(uint8_t red, uint8_t green, uint8_t blue){
 	wr32_eve(CLEAR_COLOR_RGB(red, green, blue));
 	inc_cmd_offset(4);
@@ -140,13 +155,13 @@ void coproc_point_size(uint16_t point_size){
 	inc_cmd_offset(4);
 }
 
-/** Clear color, stencil, and tag */
+/** Clear color, stencil, and tag buffer */
 void coproc_clear(uint8_t c, uint8_t s, uint8_t t){
 	wr32_eve(CLEAR(c, s, t));
 	inc_cmd_offset(4);
 }
 
-/** Swap the current display list */
+/** Swap the current display list to print the programmed graphics on-screen */
 void coproc_swap(void){
 	wr32_eve(CMD_SWAP);
 	inc_cmd_offset(4);
@@ -187,16 +202,15 @@ void readChipID(void){
 	while(rd8_mem(REG_ID) != 0x7C){
 	}
 }
-
-/** Checks available space in the RAM FIFO */
+		 
 void checkFreeSpace(uint16_t offset){
-	uint16_t takenSpc, freeSpc;
+	uint16_t howfull, free;
 	uint32_t rdPtr = 0;
 	
 	rdPtr = rd32_mem(REG_CMD_READ);
-	takenSpc = ((offset - (uint16_t rdPtr) & 4095);
-	freeSpc = (4096 - 4) - takenSpc;
-		return freeSpc;
+	howfull = ((offset - (uint16_t rdPtr) & 4095);
+	free = (4096 - 4) - howfull;
+		return free;
 }
 
 
