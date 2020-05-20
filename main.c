@@ -12,55 +12,30 @@
 #include "commands_ftdi.h"
 #include "definitions_ftdi.h"
 #include "commands_app.h"
+#include "game_engine.h"
+#include "graphics.h"
 
 int main(void)
 {
 	spi_masterInit();
 	ftdiInit();
-
-// 	wr32_mem(RAM_DL + 12, CLEAR_COLOR_RGB(255, 0, 0));
-// 	wr32_mem(RAM_DL + 16, CLEAR(1, 1, 1));
-// 	wr32_mem(RAM_DL + 20, DISPLAY());
-// 	wr32_mem(REG_DLSWAP, DLSWAP_FRAME);
-
-	coproc_list_begin();
-	coproc_dlstart();
-	coproc_clear(1, 1, 1);
-	coproc_clear(0, 0, 0);
-
-	coproc_color_rgb(255, 0, 0);
-	coproc_begin_primitive(POINT);
-	coproc_point_size(50*16);
-	coproc_vertex2II(20, 100, 0, 0);
-	coproc_end();
-
-	coproc_display();
-	coproc_swap();
-
-	coproc_list_end();
+	buttonInit();
 	
-	initGame();
-	
-	uint8_t selectPointer = 0;
-	uint8_t poll = 0;
-	while(poll != SEL){
-		if (buttonPoll() == R)
-		{
-			selectPointer++;
+	//replay game forever and ever and ever and ever
+	while(1){
+		placeShips();
+		//run game as long as there is no winner
+		while(noWinner == true){
+			shootShips();
 		}
-		else if(buttonPoll() == L)
-		{
-			selectPointer--;
-		}
-		selectPointer = selectPointer%2;
-		poll = buttonPoll();
-	}
-	
-	selectGameType(selectPointer);
-	
-	while (1)
-	{
 		
+		//print winner when game is over
+		if(winner == 1){
+			[print function]("Player One won!");
+		}
+		else if(winner == 2){
+			[print function]("Player Two won!");
+		}
 	}
 }
 
