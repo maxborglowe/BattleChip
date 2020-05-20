@@ -97,10 +97,12 @@ void coproc_begin_primitive(uint8_t primitive){
 	inc_cmd_offset(4);
 }
 
+/** Select color with which primitives will be drawn */
 void coproc_color_rgb(uint8_t red, uint8_t green, uint8_t blue){
 	wr32_eve(COLOR_RGB(red, green, blue));
 	inc_cmd_offset(4);
 }
+
 
 void coproc_vertex2II(uint16_t x, uint16_t y, uint8_t handle, uint8_t cell){
 	wr32_eve(VERTEX2II(x, y, handle, cell));
@@ -185,15 +187,16 @@ void readChipID(void){
 	while(rd8_mem(REG_ID) != 0x7C){
 	}
 }
-		 
+
+/** Checks available space in the RAM FIFO */
 void checkFreeSpace(uint16_t offset){
-	uint16_t howfull, free;
+	uint16_t takenSpc, freeSpc;
 	uint32_t rdPtr = 0;
 	
 	rdPtr = rd32_mem(REG_CMD_READ);
-	howfull = ((offset - (uint16_t rdPtr) & 4095);
-	free = (4096 - 4) - howfull;
-		return free;
+	takenSpc = ((offset - (uint16_t rdPtr) & 4095);
+	freeSpc = (4096 - 4) - takenSpc;
+		return freeSpc;
 }
 
 
