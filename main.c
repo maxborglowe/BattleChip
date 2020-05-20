@@ -17,9 +17,9 @@
 
 int main(void)
 {
-	spi_masterInit();
-	ftdiInit();
-	buttonInit();
+	spi_masterInit();	//Initialize MCU as SPI master
+	ftdiInit();		//Initialization sequence for FT812 chip
+	buttonInit();		//Initialize button inputs
 	
 	//replay game forever and ever and ever and ever
 	while(1){
