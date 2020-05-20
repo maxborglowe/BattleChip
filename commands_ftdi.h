@@ -23,14 +23,14 @@ void spi_masterInit(){
 void ss_lcd_on(){
 	PORTB &= ~(1<<SS_LCD);
 	//Nop() is placed to compensate for the SPI access time Tsac, as shown in fig 6.4.2 (SPI interface timing) in DS_FT81x.pdf
-	nop();
+	_NOP();
 }
 
 /** Sets the SS_LCD pin INACTIVE high, place at the end of read/write commands */
 void ss_lcd_off(){
 	
 	//Nop() is placed to compensate for the SS hold time Tcsnh, as shown in fig 6.4.2 (SPI interface timing) in DS_FT81x.pdf
-	nop();
+	_NOP();
 	PORTB |= (1<<SS_LCD);
 }
 
@@ -74,7 +74,7 @@ void powerOff(){
 void adressWrite(uint32_t adress){
 	uint8_t dummyRd = 0;
 	dummyRd = spi_transmit((uint8_t)(adress>>16) | MEM_WR);		/* Send high byte + write command */
-	dummyRd = spi_transmit((uint8_t)(adress>>8));	
+	dummyRd = spi_transmit((uint8_t)(adress>>8));
 	dummyRd = spi_transmit((uint8_t)(adress));					/* Send low byte */
 }
 
