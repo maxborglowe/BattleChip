@@ -110,29 +110,29 @@
    The scissor test and buffer write masks affects operation of CLEAR. Scissor limits cleared rect,
    and buffer write masks limit affected buffers. State of ALPHA_FUNC
    c: HIGH = clear color buffer, s: HIGH = clear stencil buffer, t: HIGH = clear tag buffer */
-#define CLEAR(c, s, t) ((0x26UL<<24)|(((c)&1UL)<<2)|(((s)&1UL)<<1)|(((t)&1UL)<<0))
+#define CLEAR(c, s, t) ((0x26UL<<24)|(((c)&1UL)<<2)|(((s)&1UL)<<1)|(((t)&1UL)))
 #define CLEAR_COLOR_A(alpha) ((0x0F<<24)|(alpha<<8)) /** Specify clear value for alpha channel, initial value is 0 */
-#define CLEAR_COLOR_RGB(red, green, blue) ((2UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL)<<0)) /* Sets color values used by a following CLEAR */
+#define CLEAR_COLOR_RGB(red, green, blue) ((2UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL))) /* Sets color values used by a following CLEAR */
 #define CLEAR_STENCIL(s) ((0x11UL<<24)|((s)&255UL)) /** Clear value for stencil buffer. s: value to clear stencil buffer. Init: 0 */
 #define CLEAR_TAG(t) ((0x12UL<<24)|((t)&255UL)) /** Clear value for tag buffer. s: value to clear tag buffer. Init: 0 */
 /** Set alpha value to drawn element (points, lines, bitmaps). How alpha value affects pixels depends on BLEND_FUNC.
   Default behaviour: Transparent blend. 
   alpha: Alpha for current color. Init: 255 */
 #define COLOR_A(alpha) ((0x10UL<<24)|((alpha)&255UL))
-#define COLOR_RGB(red,green,blue) ((4UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL)<<0)) /** Sets color r, g, b. Init (all): 255*/
+#define COLOR_RGB(red,green,blue) ((4UL<<24)|(((red)&255UL)<<16)|(((green)&255UL)<<8)|(((blue)&255UL))) /** Sets color r, g, b. Init (all): 255*/
 #define DISPLAY() (0UL<<24) /** Put this at the end of each display list! FT812 will ignore all commands following this command */
 /** Set width of drawn line. Width = distance from center to outermost drawn pixel, unit: 1/16 pixel. Range: 0 - 4095, ie 0 - 255 pixels.
 	NOTE: Will affect LINES, LINE_STRIP, RECT, EDGE_STRIP_A/B/R/L*/
-#define LINE_WIDTH(width) ((0x0eUL<<24)|(((width)&4095UL)<<0))
+#define LINE_WIDTH(width) ((0x0eUL<<24)|(((width)&4095UL)))
 /** Set point radius. Width = distance from center to outermost drawn pixel, unit: 1/16 pixel. Init: 16. Range: 0 - 8191, ie 0 - 511 pixels.*/
-#define POINT_SIZE(p_size) ((0x0dUL<<24)|(((p_size)&8191UL)<<0))
+#define POINT_SIZE(p_size) ((0x0dUL<<24)|(((p_size)&8191UL)))
 /** Start operation of drawing primitive. Pixel precision & max range of coordinates depends on value of VERTEX_FORMAT.
 	x & y: signed coordinates in units of pixel precision defined in command VERTEX_FORMAT. Init: 1/16 pixel precision*/
-#define VERTEX_FORMAT(frac) ((39UL<<24)|(((frac)&7UL)<<0))
-#define VERTEX2F(x, y) ((1UL<<30)|(((x)&32767UL)<<15)|(((y)&32767UL)<<0))
+#define VERTEX_FORMAT(frac) ((39UL<<24)|(((frac)&7UL)))
+#define VERTEX2F(x, y) ((1UL<<30)|(((x)&32767UL)<<15)|(((y)&32767UL)))
 /** Start operation of drawing primitive.
 	x & y: range is 0 - 511 pixels. Init: 1/16 pixel precision*/
-#define VERTEX2II(x, y, handle, cell) ((0x2UL<<30)|(((x)&511UL)<<21)|(((y)&511UL)<<12)|(((handle)&31UL)<<7)|(((cell)&127UL)<<0))
+#define VERTEX2II(x, y, handle, cell) ((2UL<<30)|(((x)&511UL)<<21)|(((y)&511UL)<<12)|(((handle)&31UL)<<7)|(((cell)&127UL)))
 
 //#######################################
 // Commands used by coprocessor
