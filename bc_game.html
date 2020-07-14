@@ -17,9 +17,7 @@
             margin-right: auto;
         }
 
-        .container {
-
-        }
+        .container {}
 
         .center {
             display: block;
@@ -43,7 +41,7 @@
             color: white;
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             font-size: large;
-            
+
         }
     </style>
 </head>
@@ -57,15 +55,16 @@
     <p class="sticky" id="announcement"></p>
     <div class="container">
         <canvas class="center" id="gameCanvas" width="500" height="500" onmousemove="getMousePos(canvas, event)"
-        onclick="placeShips(); incAmtPlayers();">
+            onclick="placeShips(); incAmtPlayers();">
         </canvas>
 
         <button id="rotateButton" onclick="rotateShip();">rotate</button>
         <button id="toggleButton" onclick="toggleBoard();">toggle</button>
-        
-        <button id="startButton" onclick="startGame();">start game</button>
+
+        <button id="ffaButton" onclick="startGame();">free-for-all</button>
+        <button id="teamsButton" onclick="startGame();">teams</button>
     </div>
-    
+
     <script>
         announceVar = "Set player amount";
         var rotateButton = document.getElementById("rotateButton");
@@ -126,28 +125,39 @@
         friendlyBoard: (0 default) = no placement, (1) = ship placed
         shootBoard: (0 default) = no placement, (1) = hit, (2) = miss */
 
-        var friendlyBoard = new Array(amtPlayers);
-        var shootBoard = new Array(amtPlayers);
+        var friendlyBoard;
+        var shootBoard;
 
-        for (var p = 0; p < amtPlayers; p++) {
-            friendlyBoard[p] = new Array(w);
-            shootBoard[p] = new Array(w);
-            for (var i = 0; i < w; i++) {
-                friendlyBoard[p][i] = new Array(h);
-                shootBoard[p][i] = new Array(h);
-                for (var k = 0; k < h; k++) {
-                    friendlyBoard[p][i][k] = 0;
-                    shootBoard[p][i][k] = 0;
+        updateAmtPlayers();
+
+        function updateAmtPlayers() {
+            friendlyBoard = new Array(amtPlayers);
+            shootBoard = new Array(amtPlayers);
+
+            for (var p = 0; p < amtPlayers; p++) {
+                friendlyBoard[p] = new Array(w);
+                shootBoard[p] = new Array(w);
+                for (var i = 0; i < w; i++) {
+                    friendlyBoard[p][i] = new Array(h);
+                    shootBoard[p][i] = new Array(h);
+                    for (var k = 0; k < h; k++) {
+                        friendlyBoard[p][i][k] = 0;
+                        shootBoard[p][i][k] = 0;
+                    }
                 }
             }
         }
+
+
 
         /* Score board for each player */
         var scoreBoard = new Array(amtPlayers);
         scoreBoardZero();
 
-        var startButton = document.getElementById("startButton");
-        startButton.style.display = "block";
+        var ffaButton = document.getElementById("ffaButton");
+        ffaButton.style.display = "block";
+        var teamsButton = document.getElementById("teamsButton");
+        teamsButton.style.display = "block";
         var rotateButton = document.getElementById("rotateButton");
         rotateButton.style.display = "none";
         var toggleButton = document.getElementById("toggleButton");
@@ -208,7 +218,7 @@
             }
         }
 
-        function scoreBoardZero(){
+        function scoreBoardZero() {
             for (var p = 0; p < amtPlayers; p++) {
                 scoreBoard[p] = 0;
             }
@@ -224,7 +234,7 @@
         }
 
         function getPlayerColor() {
-            
+
         }
 
         /* During setupMode: Get boardPosX/Y while making the ship stay inside the bounds
@@ -269,6 +279,23 @@
 
 
         function printAnnouncement() {
+            if (setupMode == true) {
+                announceVar = "Place ships, ";
+            }
+            else if (setupMode == false) {
+                announceVar = "";
+            }
+            announceVar += "player " + (getCurrentPlayer() + 1);
+
+            if (gameStarted == true) {
+                document.getElementById("scorePrint").innerHTML = scoreString;
+                scoreString = "";
+                for (let p = 0; p < amtPlayers; p++) {
+                    scoreString += "\n player " + (p + 1) + " score: " + scoreBoard[p];
+                }
+            } else if (gameStarted == false) {
+                announceVar = "Set player amount by clicking below";
+            }
             document.getElementById("announcement").innerHTML = announceVar;
         }
 
@@ -278,7 +305,8 @@
 
         function startGame() {
             gameStarted = true;
-            startButton.style.display = "none";
+            ffaButton.style.display = "none";
+            teamsButton.style.display = "none";
             rotateButton.style.display = "block";
             scoreBoardZero();
             selectBoardZero();
@@ -297,15 +325,16 @@
             drawBoard();
         }
 
-        function incAmtPlayers(){
+        function incAmtPlayers() {
             if (gameStarted == false) {
-                amtPlayers = (amtPlayers+1)%5;
+                amtPlayers = (amtPlayers + 1) % 5;
                 if (amtPlayers < 2) {
                     amtPlayers = 2;
                 }
                 drawBoard();
+                updateAmtPlayers();
             }
-            
+
         }
 
         /* Place ships on corresponding players friendlyBoard. The position of each ship's pieces
@@ -348,39 +377,39 @@
                         setupMode = false;
                         currentPlayer = 0;
                         shipType = "none";
-                        toggleButton.style.display = "inline-block";
+                        toggleButton.style.display = "block";
+                        rotateButton.style.display = "none";
                         selectBoardZero();
                     }
                     getShipType();
                 }
-            }
 
+                /* Shooting phase */
+                if (setupMode == false) {
+                    toggleVar = true;
+                    var legalShot = false;
+                    if (selectBoard[boardPosX][boardPosY] == 1 && shootBoard[currentPlayer][boardPosX][boardPosY] == 0) {
+                        legalShot = true;
+                    }
 
-
-            /* Shooting phase */
-            if (setupMode == false) {
-                toggleVar = true;
-                var legalShot = false;
-                if (selectBoard[boardPosX][boardPosY] == 1 && shootBoard[currentPlayer][boardPosX][boardPosY] == 0) {
-                    legalShot = true;
-                }
-
-                if (legalShot == true) {
-                    if (friendlyBoard[(currentPlayer + 1) % amtPlayers][boardPosX][boardPosY] == 1) {
-                        /* Hit */
-                        announceVar = "Hit!";
-                        shootBoard[currentPlayer][boardPosX][boardPosY] = 1;
-                    } else {
-                        /* Miss */
-                        announceVar = "Miss!";
-                        shootBoard[currentPlayer][boardPosX][boardPosY] = 2;
+                    if (legalShot == true) {
+                        if (friendlyBoard[(currentPlayer + 1) % amtPlayers][boardPosX][boardPosY] == 1) {
+                            /* Hit */
+                            announceVar = "Hit!";
+                            shootBoard[currentPlayer][boardPosX][boardPosY] = 1;
+                        } else {
+                            /* Miss */
+                            announceVar = "Miss!";
+                            shootBoard[currentPlayer][boardPosX][boardPosY] = 2;
+                        }
                     }
                 }
+                if (legalShot == true) {
+                    incCurrentPlayer();
+                    printAnnouncement();
+                }
+                drawBoard();
             }
-            if (legalShot == true) {
-                incCurrentPlayer();
-            }
-            drawBoard();
         }
 
 
@@ -395,15 +424,8 @@
             return shipType;
         }
 
-        /* Draws board. If a matrix is input, the board will draw blue dots that represent
-            ones in specified matrix.*/
-        function drawBoard() {
-            let rectWidth = canWidth/w;
-            let rectHeight = canHeight/h;
-            var selectBoardString = "";
-            scoreBoard[currentPlayer] = 0;
-
-            if(gameStarted == false){
+        function drawPlayerAmtNbr() {
+            if (gameStarted == false) {
                 selectBoardZero();
                 if (amtPlayers == 2) {
                     for (let i = 0; i < 2; i++) {
@@ -416,7 +438,7 @@
                     for (let f = 0; f < 3; f++) {
                         for (let i = 0; i < 6; i++) {
                             for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 2][k + f*4] = 1;
+                                selectBoard[i + 2][k + f * 4] = 1;
                             }
                         }
                     }
@@ -424,19 +446,19 @@
                     for (let f = 0; f < 2; f++) {
                         for (let i = 0; i < 2; i++) {
                             for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 6][k + 2 + f*4] = 1;
+                                selectBoard[i + 6][k + 2 + f * 4] = 1;
                             }
                         }
                     }
-                    
+
                     for (let f = 0; f < 3; f++) {
                         for (let i = 0; i < 6; i++) {
                             for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 2][k + f*4] = 1;
+                                selectBoard[i + 2][k + f * 4] = 1;
                             }
                         }
                     }
-                } else if(amtPlayers == 4) {
+                } else if (amtPlayers == 4) {
                     for (let i = 0; i < 2; i++) {
                         for (let k = 0; k < h; k++) {
                             selectBoard[i + 6][k] = 1;
@@ -450,28 +472,29 @@
                     }
                 }
             }
+        }
 
-            if (setupMode == true) {
-                announceVar = "Place ships, ";
-            }
-            else if (setupMode == false) {
-                announceVar = "";
-            }
+        /* Draws board. If a matrix is input, the board will draw blue dots that represent
+            ones in specified matrix.*/
+        function drawBoard() {
+            let rectWidth = canWidth / w;
+            let rectHeight = canHeight / h;
+            scoreBoard[currentPlayer] = 0;
 
-            announceVar += "player " + (getCurrentPlayer() + 1);
+            drawPlayerAmtNbr();
 
-            for (var i = 0; i < w; i++) {
-                for (var k = 0; k < h; k++) {
+            for (let i = 0; i < w; i++) {
+                for (let k = 0; k < h; k++) {
                     let x = (i * canWidth / w + midOffset);
                     let y = (k * canHeight / h + midOffset);
-                    
+
                     pieceColor = document.body.style.backgroundColor;
                     if (gameStarted == true) {
                         pieceColor = "#ff9933"; //orange
                     }
 
                     if (selectBoard[i][k] == 1) {
-                        if(gameStarted == true){
+                        if (gameStarted == true) {
                             pieceColor = "#0099ff"; //blue
                         } else {
                             pieceColor = "#ff9933"; //orange
@@ -508,21 +531,12 @@
                     ctx.fill();
                 }
             }
-            
+
             if (scoreBoard[currentPlayer] == 17) {
                 winner = true;
                 announceVar = "player " + (currentPlayer + 1) + " wins!";
             }
 
-            if (gameStarted == true){
-                document.getElementById("scorePrint").innerHTML = scoreString;
-                scoreString = "";
-                for (let p = 0; p < amtPlayers; p++) {
-                    scoreString += "\n player " + (p + 1) + " score: " + scoreBoard[p];
-                }
-            } else if(gameStarted == false){
-                announceVar = "Set player amount by clicking below";
-            }
             printAnnouncement();
 
             if (winner == true) {
