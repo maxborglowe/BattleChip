@@ -30,23 +30,18 @@
         button {
             background-color: #ff9933;
             border: none;
-            padding: 20px 10%;
+            padding: 20px 5%;
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             margin-top: 1%;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         p {
             color: white;
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             font-size: large;
-
         }
     </style>
 </head>
-
-
 
 <body onload="getCanvasDimensions(); drawBoard();" onresize="getCanvasDimensions()"
     style="background-color: rgb(36, 36, 36);">
@@ -54,15 +49,15 @@
 
     <p class="sticky" id="announcement"></p>
     <div class="container">
-        <canvas class="center" id="gameCanvas" width="500" height="500" onmousemove="getMousePos(canvas, event)"
+        <canvas class="center" id="gameCanvas" onmousemove="getMousePos(canvas, event)"
             onclick="placeShips(); incAmtPlayers();">
         </canvas>
 
         <button id="rotateButton" onclick="rotateShip();">rotate</button>
         <button id="toggleButton" onclick="toggleBoard();">toggle</button>
 
-        <button id="ffaButton" onclick="startGame();">free-for-all</button>
-        <button id="teamsButton" onclick="startGame();">teams</button>
+        <button id="ffaButton" onclick="startGame(0);">free-for-all</button>
+        <button id="teamsButton" onclick="startGame(1);">teams</button>
     </div>
 
     <script>
@@ -71,7 +66,10 @@
         rotateButton.style.display = "none";
 
         var canvas = document.getElementById("gameCanvas");
+        canvas.width = 500;
+        canvas.height = 500;
         var ctx = canvas.getContext("2d");
+
 
         /* Canvas dimensions */
         var canWidth = canvas.width;
@@ -108,6 +106,7 @@
         var scoreString = "";
         var winner = false;
         var gameStarted = false;
+        var playerSel = 0;
 
         /* Create select board */
         var selectBoard = new Array(h);
@@ -136,19 +135,21 @@
 
             for (var p = 0; p < amtPlayers; p++) {
                 friendlyBoard[p] = new Array(w);
-                shootBoard[p] = new Array(w);
-                for (var i = 0; i < w; i++) {
-                    friendlyBoard[p][i] = new Array(h);
-                    shootBoard[p][i] = new Array(h);
-                    for (var k = 0; k < h; k++) {
-                        friendlyBoard[p][i][k] = 0;
-                        shootBoard[p][i][k] = 0;
+                shootBoard[p] = new Array(amtPlayers);
+                for (let s = 0; s < amtPlayers; s++) {
+                    shootBoard[p][s] = new Array(w);
+                    for (var i = 0; i < w; i++) {
+                        friendlyBoard[p][i] = new Array(h);
+                        shootBoard[p][s][i] = new Array(h);
+                        for (var k = 0; k < h; k++) {
+                            friendlyBoard[p][i][k] = 0;
+                            shootBoard[p][s][i][k] = 0;
+                        }
                     }
+
                 }
             }
         }
-
-
 
         /* Score board for each player */
         var scoreBoard = new Array(amtPlayers);
@@ -276,8 +277,6 @@
             }
         }
 
-
-
         function printAnnouncement() {
             if (setupMode == true) {
                 announceVar = "Place ships, ";
@@ -303,16 +302,35 @@
             return currentPlayer;
         }
 
-        function startGame() {
+        /* 0 = ffa, 1 = teams */
+        function startGame(gameType) {
             gameStarted = true;
             ffaButton.style.display = "none";
             teamsButton.style.display = "none";
             rotateButton.style.display = "block";
+
+            createPlayerSelButtons();
             scoreBoardZero();
             selectBoardZero();
             drawBoard();
         }
 
+        /* create buttons used to select which player to shoot at */
+        function createPlayerSelButtons() {
+            let body = document.getElementsByTagName("body")[0];
+
+            for (let p = 0; p < amtPlayers; p++) {
+                var button = document.createElement("button");
+                button.style.display = "inline-block";
+
+                button.innerHTML = "player " + (p + 1);
+                canvas.before(button);
+                button.addEventListener("click", function () {
+                    playerSel = p;
+                    drawBoard();
+                });
+            }
+        }
 
         /* During setupMode = true lets player rotate the current shipType */
         function rotateShip() {
@@ -334,7 +352,6 @@
                 drawBoard();
                 updateAmtPlayers();
             }
-
         }
 
         /* Place ships on corresponding players friendlyBoard. The position of each ship's pieces
@@ -388,19 +405,19 @@
                 if (setupMode == false) {
                     toggleVar = true;
                     var legalShot = false;
-                    if (selectBoard[boardPosX][boardPosY] == 1 && shootBoard[currentPlayer][boardPosX][boardPosY] == 0) {
+                    if (selectBoard[boardPosX][boardPosY] == 1 && shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] == 0) {
                         legalShot = true;
                     }
 
                     if (legalShot == true) {
-                        if (friendlyBoard[(currentPlayer + 1) % amtPlayers][boardPosX][boardPosY] == 1) {
+                        if (friendlyBoard[playerSel][boardPosX][boardPosY] == 1) {
                             /* Hit */
                             announceVar = "Hit!";
-                            shootBoard[currentPlayer][boardPosX][boardPosY] = 1;
+                            shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] = 1;
                         } else {
                             /* Miss */
                             announceVar = "Miss!";
-                            shootBoard[currentPlayer][boardPosX][boardPosY] = 2;
+                            shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] = 2;
                         }
                     }
                 }
@@ -411,7 +428,6 @@
                 drawBoard();
             }
         }
-
 
         function incCurrentPlayer() {
             currentPlayer = (currentPlayer + 1) % amtPlayers;
@@ -424,6 +440,7 @@
             return shipType;
         }
 
+        /*  */
         function drawPlayerAmtNbr() {
             if (gameStarted == false) {
                 selectBoardZero();
@@ -481,8 +498,13 @@
             let rectHeight = canHeight / h;
             scoreBoard[currentPlayer] = 0;
 
+            for (let p = 0; p < amtPlayers; p++) {
+                document.getElementsByTagName("button")[0 + p].style.display = "inline-block";
+                document.getElementsByTagName("button")[0 + currentPlayer].style.display = "none";
+            }
+            
             drawPlayerAmtNbr();
-
+            
             for (let i = 0; i < w; i++) {
                 for (let k = 0; k < h; k++) {
                     let x = (i * canWidth / w + midOffset);
@@ -501,26 +523,26 @@
                         }
                     }
 
+                    /* draw friendly Board */
                     if (toggleVar == false) {
                         /* Piece alive */
                         if (friendlyBoard[currentPlayer][i][k] == 1) {
                             pieceColor = "#33cc33"; //green
                             /* Piece dead */
-                            if (shootBoard[(currentPlayer + 1) % amtPlayers][i][k] == 1) {
-                                pieceColor = "#ff3300"; //red
+                            for (let p = 0; p < amtPlayers; p++) {
+                                if (shootBoard[p][playerSel][i][k] == 1) {
+                                    pieceColor = "#ff3300"; //red
+                                }
                             }
-                        }
-                        else if (friendlyBoard[currentPlayer][i][k] == 0) {
-                        }
-                    }
-                    else if (toggleVar == true) {
+                        } /* draw shootBoard*/
+                    } else if (toggleVar == true) {
                         /* Hit */
-                        if (shootBoard[currentPlayer][i][k] == 1) {
+                        if (shootBoard[currentPlayer][playerSel][i][k] == 1) {
                             scoreBoard[currentPlayer]++;
                             pieceColor = "#ff3300"; //red
                         }
                         /* Miss */
-                        else if (shootBoard[currentPlayer][i][k] == 2) {
+                        else if (shootBoard[currentPlayer][playerSel][i][k] == 2) {
                             pieceColor = document.body.style.backgroundColor; //blend with bg
                         }
                     }
@@ -542,7 +564,8 @@
             if (winner == true) {
                 gameStarted = false;
             }
-            document.getElementById("demo").innerHTML = "gamestart: " + gameStarted + " winner " + winner + " crtPlayer " + currentPlayer;
+            document.getElementById("demo").innerHTML = "gamestart: " + gameStarted + " winner " + winner + " crtPlayer " + currentPlayer
+                + "playerSel " + playerSel;
         }
     </script>
 
