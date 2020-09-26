@@ -1,577 +1,772 @@
 <!DOCTYPE html>
 <html>
-<var></var>
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="description" content="Free Web tutorials">
-    <meta name="keywords" content="HTML, CSS, JavaScript">
-    <meta name="author" content="Max Borglowe">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Free Web tutorials" />
+    <meta name="keywords" content="HTML, CSS, JavaScript" />
+    <meta name="author" content="Max Borglowe" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
-        p.sticky {
-            text-align: center;
-            margin-top: 15%;
-            margin-left: auto;
-            margin-right: auto;
-        }
+      body {
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+      }
+      p {
+        text-align: center;
+      }
 
-        .container {}
+      p.para-top {
+        position: relative;
+      }
 
-        .center {
-            display: block;
-            margin-top: 0%;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 50%;
-        }
+      p.para-btm {
+        position: absolute;
+        top: -4vh;
+        margin-top: 5px;
+      }
 
-        button {
-            background-color: #ff9933;
-            border: none;
-            padding: 20px 5%;
-            font-family: Verdana, Geneva, Tahoma, sans-serif;
-            margin-top: 1%;
-        }
+      .flex-container {
+        margin-top: 15vh;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
 
-        p {
-            color: white;
-            font-family: Verdana, Geneva, Tahoma, sans-serif;
-            font-size: large;
-        }
+      #buttonMesh {
+        position: relative;
+        flex-direction: row;
+        margin-bottom: 5px;
+      }
+
+      button {
+        background-color: #ff9933;
+        position: relative;
+        border: none;
+        width: 13vw;
+        height: 30px;
+        margin-left: 5px;
+        font-size: 1.3vmax;
+        text-align: center;
+      }
+
+      p {
+        color: white;
+        font-size: 1.3vmax;
+      }
     </style>
-</head>
+  </head>
 
-<body onload="getCanvasDimensions(); drawBoard();" onresize="getCanvasDimensions()"
-    style="background-color: rgb(36, 36, 36);">
+  <body
+    onload="getCanvasDimensions(); drawBoard();"
+    onresize="getCanvasDimensions(); getCanvasDimensions();"
+    style="background-color: rgb(36, 36, 36)"
+  >
+    <div class="flex-container">
+      <p class="para-top" id="announcement"></p>
+      <p class="para-btm" id="scorePrint"></p>
 
-
-    <p class="sticky" id="announcement"></p>
-    <div class="container">
-        <canvas class="center" id="gameCanvas" onmousemove="getMousePos(canvas, event)"
-            onclick="placeShips(); incAmtPlayers();">
-        </canvas>
-
+      <div id="buttonMesh">
         <button id="rotateButton" onclick="rotateShip();">rotate</button>
         <button id="toggleButton" onclick="toggleBoard();">toggle</button>
+        <button id="ffaButton" onclick="startGame(0);">start game</button>
+        <!-- <button id="teamsButton" onclick="startGame(1);">teams</button> -->
+      </div>
 
-        <button id="ffaButton" onclick="startGame(0);">free-for-all</button>
-        <button id="teamsButton" onclick="startGame(1);">teams</button>
+      <!-- canvas is unresponsive. could be fixe by some onresize command.
+		max-size is limited to 536x390 pixels. -->
+      <canvas
+        class="canvas-container"
+        id="gameCanvas"
+        onmousemove="getMousePos(canvas, event)"
+        onclick="placeShips(); incAmtPlayers();"
+      >
+      </canvas>
     </div>
 
     <script>
-        announceVar = "Set player amount";
-        var rotateButton = document.getElementById("rotateButton");
-        rotateButton.style.display = "none";
+      announceVar = "Set player amount";
+      var rotateButton = document.getElementById("rotateButton");
+      rotateButton.style.display = "none";
 
-        var canvas = document.getElementById("gameCanvas");
-        canvas.width = 500;
-        canvas.height = 500;
-        var ctx = canvas.getContext("2d");
+      /* Multipliers that keep track of initial window size */
+      var winWidth = window.screen.width;
+      var winHeight = window.screen.height;
 
+      var canvas = document.getElementById("gameCanvas");
+      var ctx = canvas.getContext("2d");
 
-        /* Canvas dimensions */
-        var canWidth = canvas.width;
-        var canHeight = canvas.height;
-        var relCanWidth;    //relative to win size
-        var relCanHeight;  //relative to win size
-        /* Multipliers that keep track off initial window size */
-        var winWidth = window.screen.width;
-        var winHeight = window.screen.height;
-        /* Board dimensions */
-        var w = 10;
-        var h = 10;
-        /* Mouse coordinate variables */
-        var mouseX;
-        var mouseY;
-        /* Board cell position where mouse is hovered on canvas */
-        var boardPosX;
-        var boardPosY;
+      var innerWidth = window.innerWidth * 0.6;
+      if (innerWidth > 536) {
+        innerWidth = 536;
+      }
 
-        /* Game piece parameters */
-        var pieceRadius = (canWidth / w) / 2 - canWidth * 0.02;
-        var midOffset = (canWidth / w) / 2;
-        var pieceColor;
-        var prevPieceColor;
-        /* Game variables */
-        var setupMode = true; //during placement of ships
-        var shipType = 0;
-        var amtPiecesPerShip;
-        var round = 0;
-        var toggleVar = false;
-        var amtPlayers = 2;
-        var rotationVar = false;
-        var currentPlayer = 0;
-        var scoreString = "";
-        var winner = false;
-        var gameStarted = false;
-        var playerSel = 0;
+      var innerHeight = window.innerHeight * 0.5;
+      if (innerHeight < 390) {
+        innerHeight = 390;
+      }
 
-        /* Create select board */
-        var selectBoard = new Array(h);
-        for (var i = 0; i < w; i++) {
-            selectBoard[i] = new Array(w);
-            for (var k = 0; k < h; k++) {
-                selectBoard[i][k] = 0;
+      var canWidth;
+      var canHeight;
+      canvas.width = innerWidth;
+      canvas.height = innerWidth;
+      canWidth = canvas.width;
+      canHeight = canvas.height;
+
+      /* Canvas dimensions */
+
+      var relCanWidth; //relative to win size
+      var relCanHeight; //relative to win size
+
+      /* Board dimensions */
+      var w = 10;
+      var h = 10;
+      /* Mouse coordinate variables */
+      var mouseX;
+      var mouseY;
+      /* Board cell position where mouse is hovered on canvas */
+      var boardPosX;
+      var boardPosY;
+
+      /* Game piece parameters */
+      var pieceRadius = canWidth / w / 2 - canWidth * 0.02;
+      var midOffset = canWidth / w / 2;
+      var pieceColor;
+      var prevPieceColor;
+      /* Game variables */
+      var setupMode = true; //during placement of ships
+      var shipType = 0;
+      var amtPiecesPerShip;
+      var toggleVar = false;
+      var amtPlayers = 2;
+      var rotationVar = false;
+      var currentPlayer = 0;
+      var scoreString = "";
+      var winner = false;
+      var gameStarted = false;
+      var playerSel = 0;
+
+      /* Create select board */
+      var selectBoard = new Array(h);
+      for (var i = 0; i < w; i++) {
+        selectBoard[i] = new Array(w);
+        for (var k = 0; k < h; k++) {
+          selectBoard[i][k] = 0;
+        }
+      }
+
+      /* Create ship matrices for each player with default values (0).
+		friendlyBoard is where each player places their ships. shootBoard is where each
+		player places their shots on the opponents friendlyBoard.
+		---Definitions:
+		friendlyBoard: (0 default) = no placement, (1) = ship placed
+		shootBoard: (0 default) = no placement, (1) = hit, (2) = miss */
+
+      var friendlyBoard;
+      var shootBoard;
+      var player;
+
+      function resetGame() {
+				if(amtPlayers > 2)
+        	deletePlayerBtns();
+        resetScores();
+        BoardReset(selectBoard);
+        setupMode = true;
+        shipType = 0;
+        currentPlayer = 0;
+        toggleVar = false;
+        rotationVar = false;
+        winner = false;
+        gameStarted = false;
+        playerSel = 0;
+
+        toggleButton.style.display = "none";
+        ffaButton.style.display = "block";
+      }
+
+      function resetScores() {
+        for (let p = 0; p < amtPlayers; p++) {
+          player[p].score = 0;
+        }
+      }
+
+      updateAmtPlayers();
+
+      function updateAmtPlayers() {
+        friendlyBoard = new Array(amtPlayers);
+        shootBoard = new Array(amtPlayers);
+
+        for (var p = 0; p < amtPlayers; p++) {
+          friendlyBoard[p] = new Array(w);
+          shootBoard[p] = new Array(amtPlayers);
+          for (let s = 0; s < amtPlayers; s++) {
+            shootBoard[p][s] = new Array(w);
+            for (var i = 0; i < w; i++) {
+              friendlyBoard[p][i] = new Array(h);
+              shootBoard[p][s][i] = new Array(h);
+              for (var k = 0; k < h; k++) {
+                friendlyBoard[p][i][k] = 0;
+                shootBoard[p][s][i][k] = 0;
+              }
             }
+          }
+        }
+        createPlayers(0);
+      }
+
+      /* create players along with their respective colors depending on chosen gameMode
+		(only free-for-all is implemented).
+		The main color is corresponded by a secondary (contrast) color. Not sure if the current color
+		scheme is any good since it may confuse players. Maybe solve by randomizing main color and giving
+		it a correct contrast color?? */
+      function createPlayers(gameMode) {
+        player = new Array(amtPlayers);
+        for (let p = 0; p < amtPlayers; p++) {
+          let main, second, select;
+          switch (gameMode) {
+            case 0: //ffa
+              switch (p) {
+                case 0:
+                  main = "#ff9933"; //orange
+                  second = "#0099ff"; //blue
+                  break;
+                case 1:
+                  main = "#0099ff"; //blue
+                  second = "#ff9933"; //orange
+                  break;
+                case 2:
+                  main = "#9966ff"; //purple
+                  second = "#99ff33"; //green
+                  break;
+                case 3:
+                  main = "#99ff33"; //green
+                  second = "#9966ff"; //purple
+                  break;
+              }
+              break;
+            case 1: //teams (not implemented)
+              switch (p) {
+                case 0:
+                  main = "#ff9933"; //orange
+                  second = "#0099ff"; //blue
+                  break;
+                case 1:
+                  main = "#0099ff"; //blue
+                  second = "#ff9933"; //orange
+                  break;
+                case 2:
+                  main = "#9966ff"; //purple
+                  second = "#99ff33"; //green
+                  break;
+                case 3:
+                  main = "#99ff33"; //green
+                  second = "#9966ff"; //purple
+                  break;
+              }
+              break;
+          }
+
+          player[p] = {
+            colorMain: main,
+            colorSecondary: second,
+            select: (p + 1) % amtPlayers,
+            score: 0,
+            remaining: 17,
+            alive: true,
+          };
+        }
+      }
+
+      var ffaButton = document.getElementById("ffaButton");
+      // var teamsButton = document.getElementById("teamsButton"); //not implemented
+      var rotateButton = document.getElementById("rotateButton");
+      rotateButton.style.display = "none";
+      var toggleButton = document.getElementById("toggleButton");
+      toggleButton.style.display = "none";
+
+      /* Get coordinates from where mouse hovers over canvas.
+		This is used to determine whether mouse hovers over a certain
+		circle on the board, which is then used to adress the correspondnig
+		position in the different ship matrices */
+      function getMousePos(canvas, e) {
+        let rect = canvas.getBoundingClientRect();
+
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+        var coord = "mouse x: " + mouseX + " y: " + mouseY;
+        // document.getElementById("coordPrint").innerHTML = coord;
+        getBoardPos();
+        selectFunc();
+        drawBoard();
+      }
+
+      /* Get canvas width and height depending on the window size */
+      function getCanvasDimensions() {
+        relCanWidth = canvas.getBoundingClientRect().width;
+        relCanHeight = canvas.getBoundingClientRect().height;
+        var canvasDim =
+          "canvas width: " + relCanWidth + " height:" + relCanHeight;
+        // document.getElementById("canvasDimPrint").innerHTML = canvasDim;
+      }
+
+      /* Get the board cell position from where mouse hovers over canvas */
+      function getBoardPos() {
+        let cellWidth = relCanWidth / w;
+        let cellHeight = relCanHeight / h;
+
+        boardPosX = Math.floor(mouseX / cellWidth);
+        boardPosY = Math.floor(mouseY / cellHeight);
+
+        if (boardPosX < 0) {
+          boardPosX = 0;
+        }
+        if (boardPosY < 0) {
+          boardPosY = 0;
         }
 
-        /* Create ship matrices for each player with default values (0).
-        friendlyBoard is where each player places their ships. shootBoard is where each
-        player places their shots on the opponents friendlyBoard.
-        ---Definitions:
-        friendlyBoard: (0 default) = no placement, (1) = ship placed
-        shootBoard: (0 default) = no placement, (1) = hit, (2) = miss */
+        //var boardPos = "cell dim: " + cellWidth + " cell x: " + boardPosX + " cell y: " + boardPosY;
+        //document.getElementById("boardPosPrint").innerHTML = boardPos;
+      }
 
-        var friendlyBoard;
-        var shootBoard;
+      /* Get the amount of game pieces that the current shipType consists of */
+      function getShipPieces() {
+        switch (shipType) {
+          case 0:
+            return 5;
+          case 1:
+            return 4;
+          case 2:
+            return 3;
+          case 3:
+            return 3;
+          case 4:
+            return 2;
+        }
+      }
+
+      /* Sets all coordinates on selectBoard to zero */
+      function BoardReset(matrix) {
+        for (var i = 0; i < w; i++) {
+          for (var k = 0; k < h; k++) {
+            matrix[i][k] = 0;
+          }
+        }
+      }
+
+      /* During setupMode: Get boardPosX/Y while making the ship stay inside the bounds
+			of the canvas */
+      function selectFunc() {
+        if (gameStarted == true && winner == false) {
+          BoardReset(selectBoard);
+
+          if (setupMode == true) {
+            var amtPieces = getShipPieces();
+            var lastBoardPosX;
+            var lastBoardPosY;
+
+            if (rotationVar == false) {
+              for (var i = 0; i < amtPieces; i++) {
+                if (boardPosX + amtPieces <= w) {
+                  selectBoard[boardPosX + i][boardPosY] = 1;
+                  lastBoardPosX = boardPosX;
+                  lastBoardPosY = boardPosY;
+                } else {
+                  selectBoard[lastBoardPosX + i][lastBoardPosY] = 0;
+                }
+              }
+            } else {
+              for (var i = 0; i < amtPieces; i++) {
+                if (boardPosY + amtPieces <= h) {
+                  selectBoard[boardPosX][boardPosY + i] = 1;
+                  lastBoardPosX = boardPosX;
+                  lastBoardPosY = boardPosY;
+                } else {
+                  selectBoard[lastBoardPosX + i][lastBoardPosY] = 0;
+                }
+              }
+            }
+          } else if (setupMode == false) {
+            selectBoard[boardPosX][boardPosY] = 1;
+          }
+        }
+      }
+
+      function printAnnouncement() {
+        if (setupMode == true) {
+          announceVar = "Place ships, player " + (getCurrentPlayer() + 1);
+        } else if (setupMode == false) {
+          announceVar = "player " + (getCurrentPlayer() + 1);
+          if (toggleVar == false) {
+            announceVar += " friendly board";
+          } else {
+            announceVar += " enemy board";
+          }
+        }
+
+        if (gameStarted == true) {
+          document.getElementById("scorePrint").innerHTML = scoreString;
+          scoreString = "";
+          for (let p = 0; p < amtPlayers; p++) {
+            scoreString +=
+              "\n player " + (p + 1) + " score: " + player[p].score;
+          }
+        } else if (gameStarted == false) {
+          announceVar = "Set player amount by clicking the number below";
+        }
+        document.getElementById("announcement").innerHTML = announceVar;
+      }
+
+      function getCurrentPlayer() {
+        return currentPlayer;
+      }
+
+      /* 0 = ffa, 1 = teams (teams not implemented)*/
+      function startGame(gameMode) {
+        gameStarted = true;
+        ffaButton.style.display = "none";
+        // teamsButton.style.display = "none";
+        rotateButton.style.display = "block";
 
         updateAmtPlayers();
+        if (gameMode == 0) {
+          createPlayers(0); //ffa
+        } else {
+          createPlayers(1); //teams
+        }
 
-        function updateAmtPlayers() {
-            friendlyBoard = new Array(amtPlayers);
-            shootBoard = new Array(amtPlayers);
+        createPlayerSelButtons();
+        BoardReset(selectBoard);
+        drawBoard();
+      }
 
-            for (var p = 0; p < amtPlayers; p++) {
-                friendlyBoard[p] = new Array(w);
-                shootBoard[p] = new Array(amtPlayers);
-                for (let s = 0; s < amtPlayers; s++) {
-                    shootBoard[p][s] = new Array(w);
-                    for (var i = 0; i < w; i++) {
-                        friendlyBoard[p][i] = new Array(h);
-                        shootBoard[p][s][i] = new Array(h);
-                        for (var k = 0; k < h; k++) {
-                            friendlyBoard[p][i][k] = 0;
-                            shootBoard[p][s][i][k] = 0;
-                        }
+      /* create buttons used to select which player the current player wishes to shoot */
+      function createPlayerSelButtons() {
+        if (amtPlayers > 2) {
+          for (let p = 0; p < amtPlayers; p++) {
+            var button = document.createElement("button");
+            button.id = "player-" + (p + 1) + "-btn";
+            button.style.display = "none";
+            button.innerHTML = "player " + (p + 1);
+            toggleButton.after(button);
+
+            button.addEventListener("click", function () {
+              player[currentPlayer].select = p;
+              drawBoard();
+            });
+          }
+        }
+      }
+
+      /* Delete only player selection buttons, to simplify the process of hiding them. New ones
+		are created when the next game starts */
+      function deletePlayerBtns() {
+        for (let p = 1; p <= amtPlayers; p++) {
+          var target = document.getElementById("player-" + p + "-btn");
+          target.parentNode.removeChild(target);
+        }
+      }
+
+      /* During setupMode = true lets player rotate the current shipType */
+      function rotateShip() {
+        rotationVar = !rotationVar;
+      }
+
+      /* Toggle between player's friendly and enemy board view */
+      function toggleBoard() {
+        toggleVar = !toggleVar;
+        drawBoard();
+      }
+
+      function incAmtPlayers() {
+        if (gameStarted == false) {
+          amtPlayers = (amtPlayers + 1) % 5;
+          if (amtPlayers < 2) {
+            amtPlayers = 2;
+          }
+          drawBoard();
+          updateAmtPlayers();
+        }
+      }
+
+      /* Place ships on corresponding players friendlyBoard. The position of each ship's pieces
+		positions are determined by the current state of selectBoard */
+      function placeShips() {
+        if (gameStarted == true) {
+          var boundsCheck = 0;
+
+          /* Ship placement phase */
+          if (setupMode == true) {
+            toggleVar = false;
+            if (currentPlayer < amtPlayers) {
+              if (shipType < 5) {
+                for (var i = 0; i < w; i++) {
+                  for (var k = 0; k < h; k++) {
+                    if (
+                      selectBoard[i][k] == 1 &&
+                      friendlyBoard[currentPlayer][i][k] == 0
+                    ) {
+                      boundsCheck++;
                     }
-
+                  }
                 }
-            }
-        }
-
-        /* Score board for each player */
-        var scoreBoard = new Array(amtPlayers);
-        scoreBoardZero();
-
-        var ffaButton = document.getElementById("ffaButton");
-        ffaButton.style.display = "block";
-        var teamsButton = document.getElementById("teamsButton");
-        teamsButton.style.display = "block";
-        var rotateButton = document.getElementById("rotateButton");
-        rotateButton.style.display = "none";
-        var toggleButton = document.getElementById("toggleButton");
-        toggleButton.style.display = "none";
-
-        /* Get coordinates from where mouse hovers over canvas.
-        This is used to determine whether mouse hovers over a certain
-        circle on the board, which is then used to adress the correspondnig
-        position in the different ship matrices */
-        function getMousePos(canvas, e) {
-            let rect = canvas.getBoundingClientRect();
-
-            mouseX = e.clientX - rect.left;
-            mouseY = e.clientY - rect.top;
-            var coord = "mouse x: " + mouseX + " y: " + mouseY;
-            // document.getElementById("coordPrint").innerHTML = coord;
-            getBoardPos();
-            selectFunc();
-            drawBoard();
-        }
-
-        /* Get canvas width and height depending on the window size */
-        function getCanvasDimensions() {
-            relCanWidth = canvas.getBoundingClientRect().width;
-            relCanHeight = canvas.getBoundingClientRect().height;
-            var canvasDim = "canvas width: " + relCanWidth + " height:" + relCanHeight;
-            // document.getElementById("canvasDimPrint").innerHTML = canvasDim;
-        }
-
-        /* Get the board cell position from where mouse hovers over canvas */
-        function getBoardPos() {
-            let cellWidth = relCanWidth / w;
-            let cellHeight = relCanHeight / h;
-
-
-            boardPosX = Math.floor(mouseX / cellWidth);
-            boardPosY = Math.floor(mouseY / cellHeight);
-
-            if (boardPosX < 0) {
-                boardPosX = 0;
-            }
-            if (boardPosY < 0) {
-                boardPosY = 0;
-            }
-
-            //var boardPos = "cell dim: " + cellWidth + " cell x: " + boardPosX + " cell y: " + boardPosY;
-            //document.getElementById("boardPosPrint").innerHTML = boardPos;
-        }
-
-        /* Get the amount of game pieces that the current shipType consists of */
-        function getShipPieces() {
-            switch (shipType) {
-                case 0: return 5;
-                case 1: return 4;
-                case 2: return 3;
-                case 3: return 3;
-                case 4: return 2;
-            }
-        }
-
-        function scoreBoardZero() {
-            for (var p = 0; p < amtPlayers; p++) {
-                scoreBoard[p] = 0;
-            }
-        }
-
-        /* Sets all coordinates on selectBoard to zero */
-        function selectBoardZero() {
-            for (var i = 0; i < w; i++) {
-                for (var k = 0; k < h; k++) {
-                    selectBoard[i][k] = 0;
+                if (boundsCheck >= getShipPieces()) {
+                  for (var i = 0; i < w; i++) {
+                    for (var k = 0; k < h; k++) {
+                      if (
+                        selectBoard[i][k] == 1 &&
+                        friendlyBoard[currentPlayer][i][k] == 0
+                      ) {
+                        friendlyBoard[currentPlayer][i][k] = 1;
+                      }
+                    }
+                  }
+                  BoardReset(selectBoard);
+                  shipType++;
                 }
+              }
             }
-        }
 
-        function getPlayerColor() {
+            if (shipType >= 5) {
+              currentPlayer++;
+              shipType = 0;
+            }
 
-        }
+            if (currentPlayer >= amtPlayers) {
+              toggleVar = true;
+              setupMode = false;
+              currentPlayer = 0;
+              shipType = "none";
+              toggleButton.style.display = "block";
+              rotateButton.style.display = "none";
+              BoardReset(selectBoard);
+            }
+            getShipType();
+          }
 
-        /* During setupMode: Get boardPosX/Y while making the ship stay inside the bounds
-            of the canvas */
-        function selectFunc() {
-            if (gameStarted == true && winner == false) {
-                selectBoardZero();
+          /* Shooting phase */
+          if (
+            setupMode == false &&
+            toggleVar == true &&
+            player[currentPlayer].alive == true
+          ) {
+            toggleVar = true;
+            var legalShot = false;
+            if (
+              selectBoard[boardPosX][boardPosY] == 1 &&
+              shootBoard[currentPlayer][player[currentPlayer].select][
+                boardPosX
+              ][boardPosY] == 0
+            ) {
+              legalShot = true;
+            }
 
-                if (setupMode == true) {
-                    var amtPieces = getShipPieces();
-                    var lastBoardPosX;
-                    var lastBoardPosY;
-
-                    if (rotationVar == false) {
-                        for (var i = 0; i < amtPieces; i++) {
-                            if (boardPosX + amtPieces <= w) {
-                                selectBoard[boardPosX + i][boardPosY] = 1;
-                                lastBoardPosX = boardPosX;
-                                lastBoardPosY = boardPosY;
-                            } else {
-                                selectBoard[lastBoardPosX + i][lastBoardPosY] = 0;
-                            }
-                        }
-                    } else {
-                        for (var i = 0; i < amtPieces; i++) {
-                            if (boardPosY + amtPieces <= h) {
-                                selectBoard[boardPosX][boardPosY + i] = 1;
-                                lastBoardPosX = boardPosX;
-                                lastBoardPosY = boardPosY;
-                            } else {
-                                selectBoard[lastBoardPosX + i][lastBoardPosY] = 0;
-                            }
-                        }
-                    }
+            if (legalShot == true) {
+              if (
+                friendlyBoard[player[currentPlayer].select][boardPosX][
+                  boardPosY
+                ] == 1
+              ) {
+                /* Hit */
+                announceVar = "Hit!";
+                player[player[currentPlayer].select].remaining--;
+                if (player[player[currentPlayer].select].remaining <= 0) {
+                  player[player[currentPlayer].select].alive = false;
                 }
-                else if (setupMode == false) {
-                    selectBoard[boardPosX][boardPosY] = 1;
-                }
+                player[currentPlayer].score++;
+                shootBoard[currentPlayer][player[currentPlayer].select][
+                  boardPosX
+                ][boardPosY] = 1;
+              } else {
+                /* Miss */
+                announceVar = "Miss!";
+                shootBoard[currentPlayer][player[currentPlayer].select][
+                  boardPosX
+                ][boardPosY] = 2;
+              }
             }
-        }
-
-        function printAnnouncement() {
-            if (setupMode == true) {
-                announceVar = "Place ships, ";
-            }
-            else if (setupMode == false) {
-                announceVar = "";
-            }
-            announceVar += "player " + (getCurrentPlayer() + 1);
-
-            if (gameStarted == true) {
-                document.getElementById("scorePrint").innerHTML = scoreString;
-                scoreString = "";
-                for (let p = 0; p < amtPlayers; p++) {
-                    scoreString += "\n player " + (p + 1) + " score: " + scoreBoard[p];
-                }
-            } else if (gameStarted == false) {
-                announceVar = "Set player amount by clicking below";
-            }
-            document.getElementById("announcement").innerHTML = announceVar;
-        }
-
-        function getCurrentPlayer() {
-            return currentPlayer;
-        }
-
-        /* 0 = ffa, 1 = teams */
-        function startGame(gameType) {
-            gameStarted = true;
-            ffaButton.style.display = "none";
-            teamsButton.style.display = "none";
-            rotateButton.style.display = "block";
-
-            createPlayerSelButtons();
-            scoreBoardZero();
-            selectBoardZero();
-            drawBoard();
-        }
-
-        /* create buttons used to select which player to shoot at */
-        function createPlayerSelButtons() {
-            let body = document.getElementsByTagName("body")[0];
-
-            for (let p = 0; p < amtPlayers; p++) {
-                var button = document.createElement("button");
-                button.style.display = "inline-block";
-
-                button.innerHTML = "player " + (p + 1);
-                canvas.before(button);
-                button.addEventListener("click", function () {
-                    playerSel = p;
-                    drawBoard();
-                });
-            }
-        }
-
-        /* During setupMode = true lets player rotate the current shipType */
-        function rotateShip() {
-            rotationVar = !rotationVar;
-        }
-
-        /* Toggle between player's friendly and enemy board view */
-        function toggleBoard() {
-            toggleVar = !toggleVar;
-            drawBoard();
-        }
-
-        function incAmtPlayers() {
-            if (gameStarted == false) {
-                amtPlayers = (amtPlayers + 1) % 5;
-                if (amtPlayers < 2) {
-                    amtPlayers = 2;
-                }
-                drawBoard();
-                updateAmtPlayers();
-            }
-        }
-
-        /* Place ships on corresponding players friendlyBoard. The position of each ship's pieces
-        positions are determined by the current state of selectBoard */
-        function placeShips() {
-            if (gameStarted == true) {
-                /* Ship placement phase */
-                var boundsCheck = 0;
-
-                if (setupMode == true) {
-                    toggleVar = false;
-                    if (currentPlayer < amtPlayers) {
-                        if (shipType < 5) {
-                            for (var i = 0; i < w; i++) {
-                                for (var k = 0; k < h; k++) {
-                                    if (selectBoard[i][k] == 1 && friendlyBoard[currentPlayer][i][k] == 0) {
-                                        boundsCheck++;
-                                    }
-                                }
-                            }
-                            if (boundsCheck >= getShipPieces()) {
-                                for (var i = 0; i < w; i++) {
-                                    for (var k = 0; k < h; k++) {
-                                        if (selectBoard[i][k] == 1 && friendlyBoard[currentPlayer][i][k] == 0) {
-                                            friendlyBoard[currentPlayer][i][k] = 1;
-                                        }
-                                    }
-                                }
-                                shipType++;
-                            }
-                        }
-                    }
-
-                    if (shipType >= 5) {
-                        currentPlayer++;
-                        shipType = 0;
-                    }
-
-                    if (currentPlayer >= amtPlayers) {
-                        setupMode = false;
-                        currentPlayer = 0;
-                        shipType = "none";
-                        toggleButton.style.display = "block";
-                        rotateButton.style.display = "none";
-                        selectBoardZero();
-                    }
-                    getShipType();
-                }
-
-                /* Shooting phase */
-                if (setupMode == false) {
-                    toggleVar = true;
-                    var legalShot = false;
-                    if (selectBoard[boardPosX][boardPosY] == 1 && shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] == 0) {
-                        legalShot = true;
-                    }
-
-                    if (legalShot == true) {
-                        if (friendlyBoard[playerSel][boardPosX][boardPosY] == 1) {
-                            /* Hit */
-                            announceVar = "Hit!";
-                            shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] = 1;
-                        } else {
-                            /* Miss */
-                            announceVar = "Miss!";
-                            shootBoard[currentPlayer][playerSel][boardPosX][boardPosY] = 2;
-                        }
-                    }
-                }
-                if (legalShot == true) {
-                    incCurrentPlayer();
-                    printAnnouncement();
-                }
-                drawBoard();
-            }
-        }
-
-        function incCurrentPlayer() {
-            currentPlayer = (currentPlayer + 1) % amtPlayers;
-        }
-
-        /* get current shipType number */
-        function getShipType() {
-            // document.getElementById("shipTypePrint").innerHTML = "shipType: " + shipType + " setupMode: " + setupMode
-            //  + " currentPlayer: " + currentPlayer;
-            return shipType;
-        }
-
-        /*  */
-        function drawPlayerAmtNbr() {
-            if (gameStarted == false) {
-                selectBoardZero();
-                if (amtPlayers == 2) {
-                    for (let i = 0; i < 2; i++) {
-                        for (let k = 0; k < 2; k++) {
-                            selectBoard[i + 6][k + 2] = 1;
-                            selectBoard[i + 2][k + 6] = 1;
-                        }
-                    }
-
-                    for (let f = 0; f < 3; f++) {
-                        for (let i = 0; i < 6; i++) {
-                            for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 2][k + f * 4] = 1;
-                            }
-                        }
-                    }
-                } else if (amtPlayers == 3) {
-                    for (let f = 0; f < 2; f++) {
-                        for (let i = 0; i < 2; i++) {
-                            for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 6][k + 2 + f * 4] = 1;
-                            }
-                        }
-                    }
-
-                    for (let f = 0; f < 3; f++) {
-                        for (let i = 0; i < 6; i++) {
-                            for (let k = 0; k < 2; k++) {
-                                selectBoard[i + 2][k + f * 4] = 1;
-                            }
-                        }
-                    }
-                } else if (amtPlayers == 4) {
-                    for (let i = 0; i < 2; i++) {
-                        for (let k = 0; k < h; k++) {
-                            selectBoard[i + 6][k] = 1;
-                            if (k < 6) {
-                                selectBoard[i + 2][k] = 1;
-                                if (k >= 4) {
-                                    selectBoard[i + 4][k] = 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        /* Draws board. If a matrix is input, the board will draw blue dots that represent
-            ones in specified matrix.*/
-        function drawBoard() {
-            let rectWidth = canWidth / w;
-            let rectHeight = canHeight / h;
-            scoreBoard[currentPlayer] = 0;
-
-            for (let p = 0; p < amtPlayers; p++) {
-                document.getElementsByTagName("button")[0 + p].style.display = "inline-block";
-                document.getElementsByTagName("button")[0 + currentPlayer].style.display = "none";
-            }
-            
-            drawPlayerAmtNbr();
-            
-            for (let i = 0; i < w; i++) {
-                for (let k = 0; k < h; k++) {
-                    let x = (i * canWidth / w + midOffset);
-                    let y = (k * canHeight / h + midOffset);
-
-                    pieceColor = document.body.style.backgroundColor;
-                    if (gameStarted == true) {
-                        pieceColor = "#ff9933"; //orange
-                    }
-
-                    if (selectBoard[i][k] == 1) {
-                        if (gameStarted == true) {
-                            pieceColor = "#0099ff"; //blue
-                        } else {
-                            pieceColor = "#ff9933"; //orange
-                        }
-                    }
-
-                    /* draw friendly Board */
-                    if (toggleVar == false) {
-                        /* Piece alive */
-                        if (friendlyBoard[currentPlayer][i][k] == 1) {
-                            pieceColor = "#33cc33"; //green
-                            /* Piece dead */
-                            for (let p = 0; p < amtPlayers; p++) {
-                                if (shootBoard[p][playerSel][i][k] == 1) {
-                                    pieceColor = "#ff3300"; //red
-                                }
-                            }
-                        } /* draw shootBoard*/
-                    } else if (toggleVar == true) {
-                        /* Hit */
-                        if (shootBoard[currentPlayer][playerSel][i][k] == 1) {
-                            scoreBoard[currentPlayer]++;
-                            pieceColor = "#ff3300"; //red
-                        }
-                        /* Miss */
-                        else if (shootBoard[currentPlayer][playerSel][i][k] == 2) {
-                            pieceColor = document.body.style.backgroundColor; //blend with bg
-                        }
-                    }
-
-                    ctx.fillStyle = pieceColor;
-                    ctx.beginPath();
-                    ctx.arc(x, y, pieceRadius, 0, 2 * Math.PI);
-                    ctx.fill();
-                }
-            }
-
-            if (scoreBoard[currentPlayer] == 17) {
-                winner = true;
-                announceVar = "player " + (currentPlayer + 1) + " wins!";
-            }
-
+          }
+          BoardReset(selectBoard);
+          if (legalShot == true) {
+            incCurrentPlayer();
             printAnnouncement();
-
-            if (winner == true) {
-                gameStarted = false;
-            }
-            document.getElementById("demo").innerHTML = "gamestart: " + gameStarted + " winner " + winner + " crtPlayer " + currentPlayer
-                + "playerSel " + playerSel;
+          }
+          drawBoard();
         }
+      }
+
+      function incCurrentPlayer() {
+        currentPlayer = (currentPlayer + 1) % amtPlayers;
+      }
+
+      /* get current shipType number */
+      function getShipType() {
+        return shipType;
+      }
+
+      /* Draws player amount indicator [2, 4] with dots on canvas, before starting game */
+      function drawPlayerAmtNbr() {
+        if (gameStarted == false) {
+          BoardReset(selectBoard);
+          if (amtPlayers == 2) {
+            for (let i = 0; i < 2; i++) {
+              for (let k = 0; k < 2; k++) {
+                selectBoard[i + 6][k + 2] = 1;
+                selectBoard[i + 2][k + 6] = 1;
+              }
+            }
+
+            for (let f = 0; f < 3; f++) {
+              for (let i = 0; i < 6; i++) {
+                for (let k = 0; k < 2; k++) {
+                  selectBoard[i + 2][k + f * 4] = 1;
+                }
+              }
+            }
+          } else if (amtPlayers == 3) {
+            for (let f = 0; f < 2; f++) {
+              for (let i = 0; i < 2; i++) {
+                for (let k = 0; k < 2; k++) {
+                  selectBoard[i + 6][k + 2 + f * 4] = 1;
+                }
+              }
+            }
+
+            for (let f = 0; f < 3; f++) {
+              for (let i = 0; i < 6; i++) {
+                for (let k = 0; k < 2; k++) {
+                  selectBoard[i + 2][k + f * 4] = 1;
+                }
+              }
+            }
+          } else if (amtPlayers == 4) {
+            for (let i = 0; i < 2; i++) {
+              for (let k = 0; k < h; k++) {
+                selectBoard[i + 6][k] = 1;
+                if (k < 6) {
+                  selectBoard[i + 2][k] = 1;
+                  if (k >= 4) {
+                    selectBoard[i + 4][k] = 1;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      /* Draws board. If a matrix is input, the board will draw blue dots that represent
+			ones in specified matrix.*/
+      function drawBoard() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let rectWidth = canWidth / w;
+        let rectHeight = canHeight / h;
+
+        drawPlayerAmtNbr();
+
+        rotateButton.style.backgroundColor = player[currentPlayer].colorMain;
+        toggleButton.style.backgroundColor = player[currentPlayer].colorMain;
+
+        if (gameStarted == true) {
+          if (setupMode == false && amtPlayers > 2) {
+            toggleButton.style.display = "inline-block";
+
+            for (let p = amtPlayers; p > 0; p--) {
+              document.getElementsByTagName("button")[
+                1 + p
+              ].style.backgroundColor = player[currentPlayer].colorMain;
+              document.getElementsByTagName("button")[1 + p].style.display =
+                "inline-block";
+              document.getElementsByTagName("button")[
+                1 + amtPlayers - currentPlayer
+              ].style.display = "none";
+            }
+          }
+        }
+
+        for (let i = 0; i < w; i++) {
+          for (let k = 0; k < h; k++) {
+            let x = (i * canWidth) / w + midOffset;
+            let y = (k * canHeight) / h + midOffset;
+
+            pieceColor = document.body.style.backgroundColor;
+            if (gameStarted == true) {
+              pieceColor = player[player[currentPlayer].select].colorMain;
+              if (setupMode == true) {
+                pieceColor = player[currentPlayer].colorMain;
+              }
+            }
+
+            if (gameStarted == true) {
+              /* draw friendly Board */
+              if (toggleVar == false) {
+                /* Piece alive */
+                if (friendlyBoard[currentPlayer][i][k] == 0) {
+                  pieceColor = player[currentPlayer].colorMain;
+                } else if (friendlyBoard[currentPlayer][i][k] == 1) {
+                  pieceColor = player[currentPlayer].colorSecondary;
+                  /* Piece dead */
+                  for (let p = 0; p < amtPlayers; p++) {
+                    if (shootBoard[p][currentPlayer][i][k] == 1) {
+                      pieceColor = document.body.style.backgroundColor; //blend with bg
+                    }
+                  }
+                } /* draw shootBoard*/
+              } else if (toggleVar == true) {
+                /*draw others' hits */
+                for (let p = 0; p < amtPlayers; p++) {
+                  if (shootBoard[p][player[currentPlayer].select][i][k] == 1) {
+                    pieceColor = player[p].colorMain;
+                  }
+                }
+                /* Hit */
+                if (
+                  shootBoard[currentPlayer][player[currentPlayer].select][i][
+                    k
+                  ] == 1
+                ) {
+                  pieceColor = player[currentPlayer].colorMain;
+                } else if (
+                  /* Miss */
+                  shootBoard[currentPlayer][player[currentPlayer].select][i][
+                    k
+                  ] == 2
+                ) {
+                  pieceColor = document.body.style.backgroundColor; //blend with bg
+                }
+              }
+            }
+
+            if (selectBoard[i][k] == 1) {
+              if (gameStarted == true) {
+                pieceColor = "#ffffff"; //white
+              } else {
+                pieceColor = player[currentPlayer].colorMain;
+              }
+            }
+
+            ctx.fillStyle = pieceColor;
+            ctx.beginPath();
+            ctx.arc(x, y, pieceRadius, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        }
+
+        //Is there any winner?
+        for (let p = 0; p < amtPlayers; p++) {
+          if (player[p].score == 17) {
+            winner = true;
+            scoreString = "player " + (currentPlayer + 1) + " wins!";
+          }
+        }
+
+        printAnnouncement();
+
+        //If there is a winner --> restart game
+        if (winner == true) {
+          resetGame();
+        }
+      }
     </script>
-
-    <p class="sticky" style="margin-top: 2%;" id="scorePrint"></p>
-    <p id="demo"></p>
-
-</body>
-
+  </body>
 </html>
